@@ -240,14 +240,8 @@
 
       <!-- Pane 3: Manage Keys -->
       <div id="tab-manage" class="tab-pane">
-
-
-
-      <!-- Pane 3: Manage Keys -->
-      <div id="tab-manage" class="tab-pane">
-
-
         <div class="table-toolbar">
+
           <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" id="tableSearch" placeholder="Tìm theo tiền tố hoặc ghi chú..." oninput="filterKeyTable()">
@@ -408,11 +402,19 @@
     function switchTab(name) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-      if (event && event.currentTarget) event.currentTarget.classList.add('active');
+      
+      const btns = document.querySelectorAll('.tab-btn');
+      btns.forEach(b => {
+        if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + name + "'")) {
+          b.classList.add('active');
+        }
+      });
+
       const pane = document.getElementById('tab-' + name);
       if (pane) pane.classList.add('active');
-      if (name === 'overview' || name === 'manage') loadAdminOverview();
+      loadAdminOverview();
     }
+
   </script>
 </body>
 </html>
