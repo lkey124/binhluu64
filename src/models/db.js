@@ -78,12 +78,37 @@ class DatabaseManager {
       const json = await res.json();
       if (json && json.result) {
         const parsed = typeof json.result === 'string' ? JSON.parse(json.result) : json.result;
-        if (parsed && parsed.clientKeys) {
-          this.data = { ...defaultData, ...parsed };
+        if (parsed) {
+          // Hợp nhất thông minh danh sách Key không làm mất bất kỳ Key nào
+          const localKeys = this.data.clientKeys || [];
+          const cloudKeys = parsed.clientKeys || [];
+          const keyMap = new Map();
+          cloudKeys.forEach(k => keyMap.set(k.id, k));
+          localKeys.forEach(k => {
+            if (!keyMap.has(k.id)) keyMap.set(k.id, k);
+          });
+
+          // Hợp nhất Kho Tài Khoản
+          const localAccs = this.data.savedAccounts || [];
+          const cloudAccs = parsed.savedAccounts || [];
+          const accMap = new Map();
+          cloudAccs.forEach(a => accMap.set(a.id, a));
+          localAccs.forEach(a => {
+            if (!accMap.has(a.id)) accMap.set(a.id, a);
+          });
+
+          this.data = {
+            ...defaultData,
+            ...parsed,
+            clientKeys: Array.from(keyMap.values()),
+            savedAccounts: Array.from(accMap.values())
+          };
+
+          this.hasSyncedFromCloud = true;
           const dir = path.dirname(DB_FILE_PATH);
           if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
           fs.writeFileSync(DB_FILE_PATH, JSON.stringify(this.data, null, 2), 'utf8');
-          console.log('✅ Đã đồng bộ thành công Két Dữ Liệu từ Cloud Database (Upstash Redis)!');
+          console.log(`✅ [CLOUD-SYNC] Đã đồng bộ thành công: ${this.data.clientKeys.length} Keys & ${this.data.savedAccounts.length} Tài khoản từ Upstash Cloud!`);
           return this.data;
         }
       }
@@ -93,10 +118,15 @@ class DatabaseManager {
     return null;
   }
 
-  async syncToCloud() {
+  async syncToCloud(force = false) {
     const cloudUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
     const cloudToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
     if (!cloudUrl || !cloudToken) return;
+
+    // Chống ghi đè dữ liệu rỗng lên Cloud
+    if (!force && !this.hasSyncedFromCloud && this.data.clientKeys.length === 0) {
+      return;
+    }
 
     try {
       await fetch(`${cloudUrl}/set/netflix_vault_data`, {
@@ -111,6 +141,7 @@ class DatabaseManager {
       console.warn('Lỗi ghi dữ liệu lên Cloud Database:', err.message);
     }
   }
+
 
 
   // --- SOURCE CONFIG ---
