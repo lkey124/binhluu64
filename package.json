@@ -1,11 +1,10 @@
 {
   "name": "netflix-license-gateway",
   "version": "1.0.0",
-  "description": "Secure Zero-Knowledge Netflix License Gateway and Lunakey Relay Hub",
-  "main": "src/server.js",
+  "description": "Netflix VIP License Gateway System",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "start": "node src/server.js"
   },
   "dependencies": {
     "axios": "^1.7.9",
@@ -16,5 +15,8 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2"
+  },
+  "engines": {
+    "node": ">=18.x"
   }
 }
