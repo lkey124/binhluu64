@@ -368,7 +368,8 @@
   </div>
 
 
-  <script src="app.js?v=3.4.0"></script>
+  <script src="app.js?v=3.5.0"></script>
+
   <script>
     // Tự động kiểm tra token lưu trong session nếu có
     const savedToken = localStorage.getItem('netflix_admin_token');
@@ -432,6 +433,10 @@
       });
 
       const pane = document.getElementById('tab-' + name);
+      if (pane) pane.classList.add('active');
+      loadAdminOverview();
+    }
+
     function toggleCustomDuration(val) {
       const box = document.getElementById('customDurationBox');
       if (!box) return;
@@ -443,5 +448,5 @@
     }
   </script>
 </body>
-
 </html>
+
