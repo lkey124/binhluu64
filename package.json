@@ -2,11 +2,12 @@
   "name": "netflix-license-gateway",
   "version": "1.0.0",
   "description": "Netflix VIP License Gateway System",
-  "main": "api/index.js",
+  "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "build": "echo build success"
+    "build": "echo 'Build OK'"
   },
+
 
   "dependencies": {
     "axios": "^1.7.9",
