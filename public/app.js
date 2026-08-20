@@ -533,33 +533,35 @@ function renderSavedAccounts(accounts) {
   tbody.innerHTML = "";
 
   if (!accounts || accounts.length === 0) {
-    tbody.innerHTML = "<tr><td colspan='6' style='text-align: center; color: var(--text-muted); padding: 20px;'>Chưa có tài khoản nào được lưu trong kho.</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='4' style='text-align: center; color: var(--text-muted); padding: 24px;'>Chưa có link nào được lưu trong kho.</td></tr>";
     return;
   }
 
   accounts.forEach(a => {
     const timeStr = new Date(a.createdAt).toLocaleTimeString() + " " + new Date(a.createdAt).toLocaleDateString();
-    const emailDisplay = a.email ? ("<strong style='color: #f1f5f9;'>" + a.email + "</strong>") : "<span style='color: var(--text-muted);'>Mã Token Link</span>";
-    const passDisplay = a.password ? a.password : "—";
-    const profilePin = (a.profile || "Chính") + (a.pin ? (" <span style='color: #eab308;'>(PIN: " + a.pin + ")</span>") : "");
+    const sourceDisplay = a.email 
+      ? ("<div style='font-weight: 700; color: #f8fafc;'>" + a.email + "</div><small style='color: #94a3b8; font-size: 11px;'>Hồ sơ: " + (a.profile || "Chính") + (a.pin ? (" • PIN: " + a.pin) : "") + "</small>") 
+      : ("<div style='font-family: monospace; color: #38bdf8; font-size: 12px; font-weight: 700;'>Mã Token Stream VIP</div>");
+    
     const rawToUse = a.email ? (a.email + " | " + a.password + " | " + (a.profile || "Hồ sơ") + (a.pin ? (" | " + a.pin) : "")) : a.pcUrl;
 
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td><span style='font-size: 11px; color: var(--text-muted);'>" + timeStr + "</span></td>" +
-      "<td>" + emailDisplay + "</td>" +
-      "<td><code style='color: #38bdf8; font-size: 12px;'>" + passDisplay + "</code></td>" +
-      "<td><span style='font-size: 12px;'>" + profilePin + "</span></td>" +
-      "<td>" +
-        (a.pcUrl ? "<a href='" + a.pcUrl + "' target='_blank' style='font-size: 11px; color: #4ade80; text-decoration: underline; margin-right: 6px;'>[Mở PC]</a>" : "") +
-        (a.mobileUrl ? "<a href='" + a.mobileUrl + "' target='_blank' style='font-size: 11px; color: #38bdf8; text-decoration: underline;'>[Mobile]</a>" : "") +
+    tr.style.borderBottom = "1px solid rgba(255, 255, 255, 0.06)";
+    tr.innerHTML = "<td style='padding: 12px 16px;'><span style='font-size: 11px; color: var(--text-muted);'>" + timeStr + "</span></td>" +
+      "<td style='padding: 12px 16px;'>" + sourceDisplay + "</td>" +
+      "<td style='padding: 12px 16px;'>" +
+        (a.pcUrl ? "<a href='" + a.pcUrl + "' target='_blank' style='font-size: 11px; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); padding: 3px 8px; border-radius: 4px; text-decoration: none; font-weight: 700; margin-right: 6px;'><i class='fa-solid fa-laptop'></i> PC</a>" : "") +
+        (a.mobileUrl ? "<a href='" + a.mobileUrl + "' target='_blank' style='font-size: 11px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 3px 8px; border-radius: 4px; text-decoration: none; font-weight: 700; margin-right: 6px;'><i class='fa-solid fa-mobile'></i> Mobile</a>" : "") +
+        (a.tvUrl ? "<a href='" + a.tvUrl + "' target='_blank' style='font-size: 11px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); padding: 3px 8px; border-radius: 4px; text-decoration: none; font-weight: 700;'><i class='fa-solid fa-tv'></i> TV</a>" : "") +
       "</td>" +
-      "<td>" +
-        "<button class='action-btn renew' title='Tạo Key khách cho Acc này' onclick=\"useSavedAccountForNewKey('" + encodeURIComponent(rawToUse) + "')\"><i class='fa-solid fa-wand-magic-sparkles'></i> Tạo Key</button>" +
+      "<td style='padding: 12px 16px;'>" +
+        "<button class='action-btn renew' title='Tạo Key khách cho Acc này' onclick=\"useSavedAccountForNewKey('" + encodeURIComponent(rawToUse) + "')\" style='margin-right: 6px;'><i class='fa-solid fa-wand-magic-sparkles'></i> Tạo Key</button>" +
         "<button class='action-btn delete' title='Xóa khỏi kho' onclick=\"deleteSavedAccount('" + a.id + "')\"><i class='fa-solid fa-trash'></i></button>" +
       "</td>";
     tbody.appendChild(tr);
   });
 }
+
 
 async function deleteSavedAccount(accountId) {
   if (!confirm("Bạn có chắc chắn muốn xóa tài khoản này khỏi kho lưu trữ?")) return;
