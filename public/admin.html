@@ -102,9 +102,13 @@
         <button class="tab-btn" onclick="switchTab('create')">
           <i class="fa-solid fa-plus-circle"></i> Tạo Key Mới
         </button>
+        <button class="tab-btn" onclick="switchTab('converter')">
+          <i class="fa-solid fa-bolt"></i> Sinh Link Token
+        </button>
         <button class="tab-btn" onclick="switchTab('manage')">
           <i class="fa-solid fa-list-check"></i> Danh sách Key
         </button>
+
         <button class="tab-btn" onclick="switchTab('source')">
           <i class="fa-solid fa-server"></i> Key Nguồn Stream
         </button>
@@ -213,8 +217,62 @@
         </div>
       </div>
 
+      <!-- Pane: Convert Acc / Cookie to Token -->
+      <div id="tab-converter" class="tab-pane">
+        <div class="source-config-card">
+          <h3><i class="fa-solid fa-bolt"></i> TRÌNH TỰ ĐỘNG SINH LINK NETFLIX NFTOKEN</h3>
+          <p class="desc">Dán Acc, Cookie, Mã Code hoặc Token vào đây — hệ thống sẽ tự động bóc tách và sinh ra trọn bộ link đăng nhập trực tiếp (PC, Mobile, TV) chuẩn Netflix!</p>
+
+          <form onsubmit="event.preventDefault(); handleConvertAccount(event);">
+            <div class="form-group full-width">
+              <label>Dán thông tin Acc / Cookie / Mã Code / Token:</label>
+              <textarea id="convertInput" rows="3" placeholder="Dán Cookie, Mã Code hoặc Token tài khoản tại đây..." required></textarea>
+            </div>
+            <button type="submit" class="btn-primary-admin">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> CHUYỂN ĐỔI & SINH LINK NGAY
+            </button>
+          </form>
+
+          <div id="convertResultBox" class="created-result-box hidden" style="margin-top: 20px;">
+            <div class="result-header">
+              <h4><i class="fa-solid fa-circle-check"></i> KẾT QUẢ LINK ĐĂNG NHẬP NETFLIX</h4>
+            </div>
+            
+            <div class="luna-platform-list" style="margin-top: 14px;">
+              <div class="luna-platform-card">
+                <div class="platform-header"><i class="fa-solid fa-laptop"></i> LINK XEM TRÊN PC / LAPTOP</div>
+                <div class="platform-action-row">
+                  <input type="text" id="convPcUrl" class="luna-url-input" readonly>
+                  <button type="button" class="btn-luna-copy" onclick="copyPlatformUrl('convPcUrl')">Copy</button>
+                  <a id="convBtnPc" href="#" target="_blank" class="btn-luna-open">Mở</a>
+                </div>
+              </div>
+
+              <div class="luna-platform-card">
+                <div class="platform-header"><i class="fa-solid fa-mobile-screen-button"></i> LINK XEM TRÊN MOBILE / IPAD</div>
+                <div class="platform-action-row">
+                  <input type="text" id="convMobileUrl" class="luna-url-input" readonly>
+                  <button type="button" class="btn-luna-copy" onclick="copyPlatformUrl('convMobileUrl')">Copy</button>
+                  <a id="convBtnMobile" href="#" target="_blank" class="btn-luna-open">Mở</a>
+                </div>
+              </div>
+
+              <div class="luna-platform-card">
+                <div class="platform-header"><i class="fa-solid fa-tv"></i> LINK XEM TRÊN TIVI (NETFLIX.COM/TV2)</div>
+                <div class="platform-action-row">
+                  <input type="text" id="convTvUrl" class="luna-url-input" readonly>
+                  <button type="button" class="btn-luna-copy" onclick="copyPlatformUrl('convTvUrl')">Copy</button>
+                  <a id="convBtnTv" href="#" target="_blank" class="btn-luna-open">Mở</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Pane 3: Manage Keys -->
       <div id="tab-manage" class="tab-pane">
+
         <div class="table-toolbar">
           <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>

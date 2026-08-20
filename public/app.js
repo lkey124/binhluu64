@@ -437,5 +437,39 @@ function renderLogs(logs) {
       "<div style='color: var(--text-muted);'>" + new Date(l.timestamp).toLocaleTimeString() + "</div>";
     logsList.appendChild(div);
   });
+}
 
+async function handleConvertAccount(event) {
+  if (event && event.preventDefault) event.preventDefault();
+  const input = document.getElementById("convertInput").value.trim();
+  if (!input) return;
+
+  try {
+    const res = await fetch("/api/admin/convert-account", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + currentAdminToken
+      },
+      body: JSON.stringify({ input })
+    });
+
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    document.getElementById("convPcUrl").value = data.pcUrl;
+    document.getElementById("convBtnPc").href = data.pcUrl;
+
+    document.getElementById("convMobileUrl").value = data.mobileUrl;
+    document.getElementById("convBtnMobile").href = data.mobileUrl;
+
+    document.getElementById("convTvUrl").value = data.tvUrl;
+    document.getElementById("convBtnTv").href = data.tvUrl;
+
+    document.getElementById("convertResultBox").classList.remove("hidden");
+    alert("✅ Đã sinh thành công bộ 3 link Netflix trực tiếp!");
+
+  } catch (err) {
+    alert("Lỗi chuyển đổi: " + err.message);
+  }
 }

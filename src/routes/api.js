@@ -213,6 +213,59 @@ router.delete('/admin/delete-key', authenticateAdmin, (req, res) => {
   res.json({ success: true, message: 'Đã xóa Key khỏi hệ thống!' });
 });
 
+// Chuyển đổi Acc / Cookie / Code thành link nftoken Netflix
+router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
+  const { input } = req.body;
+  if (!input || input.trim() === '') {
+    return res.status(400).json({ success: false, error: 'Vui lòng nhập thông tin Acc / Cookie / Code / Token!' });
+  }
+
+  const cleanInput = input.trim();
+  let nftoken = '';
+
+  // 1. Trường hợp input là URL hoặc chứa nftoken
+  if (cleanInput.includes('nftoken=')) {
+    nftoken = cleanInput.split('nftoken=')[1].split('&')[0];
+  } else if (cleanInput.includes('token=')) {
+    nftoken = cleanInput.split('token=')[1].split('&')[0];
+  } 
+  // 2. Trường hợp là Cookie Netflix
+  else if (cleanInput.includes('NetflixId=') || cleanInput.includes('SecureNetflixId=')) {
+    const netflixIdMatch = cleanInput.match(/NetflixId=([^;]+)/);
+    const secureMatch = cleanInput.match(/SecureNetflixId=([^;]+)/);
+    const rawToken = (netflixIdMatch ? netflixIdMatch[1] : '') + (secureMatch ? secureMatch[1] : '');
+    nftoken = encodeURIComponent(rawToken || cleanInput);
+  }
+  // 3. Trường hợp là mã Code / Key nguồn
+  else if (/^[A-Za-z0-9_-]{4,32}$/.test(cleanInput)) {
+    try {
+      const relayRes = await lunakeyService.fetchNetflixDirectLink();
+      if (relayRes && relayRes.directUrl && relayRes.directUrl.includes('nftoken=')) {
+        nftoken = relayRes.directUrl.split('nftoken=')[1].split('&')[0];
+      } else {
+        nftoken = encodeURIComponent(cleanInput);
+      }
+    } catch {
+      nftoken = encodeURIComponent(cleanInput);
+    }
+  } else {
+    nftoken = encodeURIComponent(cleanInput);
+  }
+
+  const pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
+  const mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
+  const tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
+
+  return res.json({
+    success: true,
+    nftoken: nftoken,
+    pcUrl: pcUrl,
+    mobileUrl: mobileUrl,
+    tvUrl: tvUrl,
+    message: 'Đã tạo bộ link Netflix thành công!'
+  });
+});
+
 // Cập nhật Key Nguồn Lunakey (Hot-Swap)
 router.post('/admin/update-source', authenticateAdmin, (req, res) => {
   const { apiUrl, sourceKey } = req.body;
