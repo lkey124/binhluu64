@@ -224,12 +224,14 @@ async function loadAdminOverview() {
 
     cachedAdminKeys = data.keys || [];
     renderKeyTable(cachedAdminKeys);
+    renderSavedAccounts(data.savedAccounts || []);
     renderLogs(data.logs || []);
 
   } catch (err) {
     console.error("Lỗi tải Admin Overview:", err);
   }
 }
+
 
 function renderKeyTable(keys) {
   const tbody = document.getElementById("keyTableBody");
@@ -513,9 +515,71 @@ async function handleConvertAccount(event) {
     document.getElementById("convBtnTv").href = data.tvUrl;
 
     document.getElementById("convertResultBox").classList.remove("hidden");
-    alert("✅ Đã sinh thành công bộ 3 link Netflix trực tiếp!");
+    loadAdminOverview();
+    alert("✅ Đã sinh thành công bộ 3 link Netflix và tự động lưu vào Kho!");
 
   } catch (err) {
     alert("Lỗi chuyển đổi: " + err.message);
   }
 }
+
+function renderSavedAccounts(accounts) {
+  const tbody = document.getElementById("savedAccountsTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (!accounts || accounts.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='6' style='text-align: center; color: var(--text-muted); padding: 20px;'>Chưa có tài khoản nào được lưu trong kho.</td></tr>";
+    return;
+  }
+
+  accounts.forEach(a => {
+    const timeStr = new Date(a.createdAt).toLocaleTimeString() + " " + new Date(a.createdAt).toLocaleDateString();
+    const emailDisplay = a.email ? ("<strong style='color: #f1f5f9;'>" + a.email + "</strong>") : "<span style='color: var(--text-muted);'>Mã Token Link</span>";
+    const passDisplay = a.password ? a.password : "—";
+    const profilePin = (a.profile || "Chính") + (a.pin ? (" <span style='color: #eab308;'>(PIN: " + a.pin + ")</span>") : "");
+    const rawToUse = a.email ? (a.email + " | " + a.password + " | " + (a.profile || "Hồ sơ") + (a.pin ? (" | " + a.pin) : "")) : a.pcUrl;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td><span style='font-size: 11px; color: var(--text-muted);'>" + timeStr + "</span></td>" +
+      "<td>" + emailDisplay + "</td>" +
+      "<td><code style='color: #38bdf8; font-size: 12px;'>" + passDisplay + "</code></td>" +
+      "<td><span style='font-size: 12px;'>" + profilePin + "</span></td>" +
+      "<td>" +
+        (a.pcUrl ? "<a href='" + a.pcUrl + "' target='_blank' style='font-size: 11px; color: #4ade80; text-decoration: underline; margin-right: 6px;'>[Mở PC]</a>" : "") +
+        (a.mobileUrl ? "<a href='" + a.mobileUrl + "' target='_blank' style='font-size: 11px; color: #38bdf8; text-decoration: underline;'>[Mobile]</a>" : "") +
+      "</td>" +
+      "<td>" +
+        "<button class='action-btn renew' title='Tạo Key khách cho Acc này' onclick=\"useSavedAccountForNewKey('" + encodeURIComponent(rawToUse) + "')\"><i class='fa-solid fa-wand-magic-sparkles'></i> Tạo Key</button>" +
+        "<button class='action-btn delete' title='Xóa khỏi kho' onclick=\"deleteSavedAccount('" + a.id + "')\"><i class='fa-solid fa-trash'></i></button>" +
+      "</td>";
+    tbody.appendChild(tr);
+  });
+}
+
+async function deleteSavedAccount(accountId) {
+  if (!confirm("Bạn có chắc chắn muốn xóa tài khoản này khỏi kho lưu trữ?")) return;
+  try {
+    const res = await fetch("/api/admin/delete-saved-account", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + currentAdminToken },
+      body: JSON.stringify({ accountId })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    loadAdminOverview();
+    alert("Đã xóa khỏi kho lưu trữ!");
+  } catch (err) {
+    alert("Lỗi xóa: " + err.message);
+  }
+}
+
+function useSavedAccountForNewKey(rawEncoded) {
+  const raw = decodeURIComponent(rawEncoded);
+  const customAccInput = document.getElementById("createCustomAccount") || document.getElementById("createModalCustomAccount");
+  if (customAccInput) customAccInput.value = raw;
+  if (typeof switchTab === "function") switchTab("create");
+  if (typeof switchAdminTab === "function") switchAdminTab("create");
+  alert("Đã chuyển tài khoản sang form Tạo Key! Bạn chỉ cần điền hạn dùng rồi bấm 'LƯU & TẠO KEY NGAY'.");
+}
+

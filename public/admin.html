@@ -267,11 +267,42 @@
               </div>
             </div>
           </div>
+
+          <!-- Kho Lưu Trữ Link & Tài Khoản Đã Tạo -->
+          <div style="margin-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <h4 style="font-size: 14px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-box-archive" style="color: #38bdf8;"></i> KHO LƯU TRỮ LINK & TÀI KHOẢN ĐÃ LƯU
+              </h4>
+              <button type="button" class="btn-secondary" onclick="loadAdminOverview()" style="padding: 4px 10px; font-size: 11px;">
+                <i class="fa-solid fa-rotate"></i> Làm mới kho
+              </button>
+            </div>
+
+            <div class="table-container">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Thời gian</th>
+                    <th>Email / Tài Khoản</th>
+                    <th>Mật khẩu</th>
+                    <th>Hồ sơ / PIN</th>
+                    <th>Link PC / Mobile</th>
+                    <th>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody id="savedAccountsTableBody">
+                  <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Chưa có tài khoản nào được lưu trong kho.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Pane 3: Manage Keys -->
       <div id="tab-manage" class="tab-pane">
+
 
         <div class="table-toolbar">
           <div class="search-box">

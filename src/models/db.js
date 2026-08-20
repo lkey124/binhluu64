@@ -258,9 +258,69 @@ class DatabaseManager {
     this.saveData();
   }
 
+  // --- SAVED ACCOUNTS & TOKENS LIBRARY ---
+  saveAccountRecord({ inputRaw = '', email = '', password = '', profile = '', pin = '', pcUrl = '', mobileUrl = '', tvUrl = '', note = '' }) {
+    if (!this.data.savedAccounts) this.data.savedAccounts = [];
+
+    const record = {
+      id: 'acc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      createdAt: new Date().toISOString(),
+      email: email.trim(),
+      profile: profile.trim(),
+      pin: pin.trim(),
+      note: note.trim(),
+      // Mã hóa mật khẩu và full raw data bằng AES-256
+      encryptedPassword: password ? encryptText(password.trim()) : null,
+      encryptedInput: inputRaw ? encryptText(inputRaw.trim()) : null,
+      pcUrl: pcUrl.trim(),
+      mobileUrl: mobileUrl.trim(),
+      tvUrl: tvUrl.trim()
+    };
+
+    this.data.savedAccounts.unshift(record);
+    if (this.data.savedAccounts.length > 200) {
+      this.data.savedAccounts.pop();
+    }
+    this.saveData();
+    return record;
+  }
+
+  getSavedAccounts() {
+    this.loadData();
+    if (!this.data.savedAccounts) this.data.savedAccounts = [];
+
+    return this.data.savedAccounts.map(a => {
+      const password = a.encryptedPassword ? decryptText(a.encryptedPassword) : '';
+      const inputRaw = a.encryptedInput ? decryptText(a.encryptedInput) : '';
+      return {
+        id: a.id,
+        createdAt: a.createdAt,
+        email: a.email,
+        password: password,
+        profile: a.profile,
+        pin: a.pin,
+        note: a.note,
+        inputRaw: inputRaw,
+        pcUrl: a.pcUrl,
+        mobileUrl: a.mobileUrl,
+        tvUrl: a.tvUrl
+      };
+    });
+  }
+
+  deleteSavedAccount(id) {
+    if (!this.data.savedAccounts) return false;
+    const index = this.data.savedAccounts.findIndex(a => a.id === id);
+    if (index === -1) return false;
+    this.data.savedAccounts.splice(index, 1);
+    this.saveData();
+    return true;
+  }
+
   getLogs() {
     return this.data.accessLogs.slice(0, 50);
   }
 }
 
 module.exports = new DatabaseManager();
+

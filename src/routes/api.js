@@ -159,6 +159,7 @@ router.get('/admin/overview', authenticateAdmin, (req, res) => {
       revokedKeys
     },
     keys,
+    savedAccounts: db.getSavedAccounts(),
     sourceConfig: {
       apiUrl: sourceConfig.apiUrl,
       sourceKeyMasked: sourceConfig.sourceKey ? (sourceConfig.sourceKey.substring(0, 4) + '********') : 'Chưa thiết lập',
@@ -167,6 +168,7 @@ router.get('/admin/overview', authenticateAdmin, (req, res) => {
     logs
   });
 });
+
 
 // Tạo Key mới cho khách hàng (Zero-Knowledge)
 router.post('/admin/create-keys', authenticateAdmin, (req, res) => {
@@ -275,15 +277,53 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
   const mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
   const tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
 
+  let email = '';
+  let password = '';
+  let profile = '';
+  let pin = '';
+
+  if (cleanInput.includes('|')) {
+    const parts = cleanInput.split('|').map(s => s.trim());
+    email = parts[0] || '';
+    password = parts[1] || '';
+    profile = parts[2] || '';
+    pin = parts[3] || '';
+  }
+
+  // Tự động lưu trữ vĩnh viễn vào Kho Lưu Trữ Tài Khoản / Link của Admin
+  const savedRecord = db.saveAccountRecord({
+    inputRaw: cleanInput,
+    email,
+    password,
+    profile,
+    pin,
+    pcUrl,
+    mobileUrl,
+    tvUrl,
+    note: req.body.note || ''
+  });
+
   return res.json({
     success: true,
     nftoken: nftoken,
     pcUrl: pcUrl,
     mobileUrl: mobileUrl,
     tvUrl: tvUrl,
-    message: 'Đã tạo bộ link Netflix thành công!'
+    savedRecord: savedRecord,
+    message: 'Đã tạo và tự động lưu vào Kho Link & Tài Khoản thành công!'
   });
 });
+
+// Xóa tài khoản / link đã lưu khỏi Kho Lưu Trữ
+router.delete('/admin/delete-saved-account', authenticateAdmin, (req, res) => {
+  const { accountId } = req.body;
+  const deleted = db.deleteSavedAccount(accountId);
+  if (!deleted) {
+    return res.status(404).json({ success: false, error: 'Không tìm thấy mục cần xóa!' });
+  }
+  res.json({ success: true, message: 'Đã xóa tài khoản khỏi Kho Lưu Trữ!' });
+});
+
 
 // Cập nhật Key Nguồn Lunakey (Hot-Swap)
 router.post('/admin/update-source', authenticateAdmin, (req, res) => {
