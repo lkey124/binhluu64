@@ -3,7 +3,9 @@ const router = express.Router();
 const db = require('../models/db');
 const lunakeyService = require('../services/lunakeyService');
 const netflixAuthService = require('../services/netflixAuthService');
+const puppeteerLoginService = require('../services/puppeteerLoginService');
 const crypto = require('crypto');
+
 
 
 const { generateAdminToken, verifyAdminToken, keyVerificationLimiter, applySecurityDelay } = require('../config/security');
@@ -314,20 +316,35 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
     profile = parts[2] || '';
     pin = parts[3] || '';
 
-    // Bước 1: Thử trích xuất nftoken trực tiếp từ Netflix qua Auth Service
+    // Bước 1: Thử tự động đăng nhập ngầm bằng Trình duyệt Puppeteer
     try {
-      const authRes = await netflixAuthService.loginAndExtractNftoken(email, password);
-      if (authRes && authRes.nftoken) {
-        nftoken = authRes.nftoken;
-        pcUrl = authRes.pcUrl;
-        mobileUrl = authRes.mobileUrl;
-        tvUrl = authRes.tvUrl;
+      const pupRes = await puppeteerLoginService.loginAndExtractSession(email, password);
+      if (pupRes && pupRes.nftoken) {
+        nftoken = pupRes.nftoken;
+        pcUrl = pupRes.pcUrl;
+        mobileUrl = pupRes.mobileUrl;
+        tvUrl = pupRes.tvUrl;
       }
-    } catch (directErr) {
-      console.log('Direct Netflix Auth không lấy được nftoken, chuyển sang Relay Stream:', directErr.message);
+    } catch (pupErr) {
+      console.log('Puppeteer không thể bóc tách nftoken:', pupErr.message);
     }
 
-    // Bước 2: Nếu chưa có nftoken, cấp từ Luồng Stream hiện tại của máy chủ
+    // Bước 2: Thử trích xuất nftoken qua Direct Auth API
+    if (!nftoken) {
+      try {
+        const authRes = await netflixAuthService.loginAndExtractNftoken(email, password);
+        if (authRes && authRes.nftoken) {
+          nftoken = authRes.nftoken;
+          pcUrl = authRes.pcUrl;
+          mobileUrl = authRes.mobileUrl;
+          tvUrl = authRes.tvUrl;
+        }
+      } catch (directErr) {
+        console.log('Direct Netflix Auth không lấy được nftoken:', directErr.message);
+      }
+    }
+
+    // Bước 3: Nếu chưa có nftoken, cấp từ Luồng Stream hiện tại của máy chủ
     if (!nftoken) {
       try {
         const relayRes = await lunakeyService.fetchNetflixDirectLink();
@@ -345,6 +362,7 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
       }
     }
   } 
+
 
   // 2. Trường hợp input là URL hoặc chứa nftoken
   else if (cleanInput.includes('nftoken=')) {
