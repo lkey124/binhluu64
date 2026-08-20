@@ -115,13 +115,17 @@ function showSuccessState(data) {
   const lunaStreams = document.getElementById("lunaStreams");
   if (lunaStreams) lunaStreams.innerText = data.streams || "4";
 
-  // Khi đã vào bên trong thành công -> Đổi banner thành Mua những tài khoản khác
+  // Khi đã vào bên trong thành công -> Đổi banner thành Mua những tài khoản khác (bỏ chữ tiền tố)
   const shopPrefix = document.getElementById("shopPromoPrefix");
-  if (shopPrefix) shopPrefix.innerText = "Cần thêm dịch vụ?";
+  if (shopPrefix) {
+    shopPrefix.innerText = "";
+    shopPrefix.style.display = "none";
+  }
   const shopLink = document.getElementById("shopPromoLink");
   if (shopLink) {
     shopLink.innerHTML = '<i class="fa-solid fa-store"></i> Mua những tài khoản khác tại binhluu.ai.studio <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i>';
   }
+
 
 
   const credEmail = document.getElementById("credEmail");
@@ -199,12 +203,16 @@ function resetKeyForm() {
 
   // Khôi phục banner ngoài màn hình nhập key
   const shopPrefix = document.getElementById("shopPromoPrefix");
-  if (shopPrefix) shopPrefix.innerText = "Chưa có mã Key?";
+  if (shopPrefix) {
+    shopPrefix.innerText = "Chưa có mã Key?";
+    shopPrefix.style.display = "inline";
+  }
   const shopLink = document.getElementById("shopPromoLink");
   if (shopLink) {
     shopLink.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Mua Key tại binhluu.ai.studio <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i>';
   }
 }
+
 
 
 
