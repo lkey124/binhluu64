@@ -187,18 +187,26 @@
             </div>
             <div class="form-group">
               <label>Thời hạn sử dụng:</label>
-              <select id="createDuration">
-                <option value="7">7 Ngày (Dùng thử)</option>
+              <select id="createDuration" onchange="toggleCustomDuration(this.value)">
+                <option value="1">1 Ngày (24 Giờ)</option>
+                <option value="3">3 Ngày</option>
+                <option value="7">7 Ngày (1 Tuần)</option>
                 <option value="30" selected>30 Ngày (1 Tháng)</option>
                 <option value="90">90 Ngày (3 Tháng)</option>
                 <option value="180">180 Ngày (6 Tháng)</option>
                 <option value="365">365 Ngày (1 Năm)</option>
+                <option value="custom">⚡ Tùy chỉnh số ngày...</option>
               </select>
+            </div>
+            <div class="form-group hidden" id="customDurationBox">
+              <label>Nhập số ngày tùy chỉnh:</label>
+              <input type="number" id="createCustomDays" placeholder="VD: 15, 45, 60..." min="0.1" step="0.5" value="15">
             </div>
             <div class="form-group">
               <label>Tiền tố Key (Prefix):</label>
               <input type="text" id="createPrefix" value="NFLX-VIP" placeholder="VD: NFLX-VIP">
             </div>
+
             <div class="form-group">
               <label>Cơ chế tính hạn:</label>
               <select id="createActivationType">
@@ -419,10 +427,16 @@
       });
 
       const pane = document.getElementById('tab-' + name);
-      if (pane) pane.classList.add('active');
-      loadAdminOverview();
+    function toggleCustomDuration(val) {
+      const box = document.getElementById('customDurationBox');
+      if (!box) return;
+      if (val === 'custom') {
+        box.classList.remove('hidden');
+      } else {
+        box.classList.add('hidden');
+      }
     }
-
   </script>
 </body>
+
 </html>

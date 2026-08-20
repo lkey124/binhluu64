@@ -334,10 +334,16 @@ function setTableFilter(filterType, btn) {
 async function handleCreateKeys(event) {
   event.preventDefault();
   const count = document.getElementById("createCount").value;
-  const durationDays = document.getElementById("createDuration").value;
+  let durationDays = document.getElementById("createDuration").value;
+  if (durationDays === "custom") {
+    const customDaysInput = document.getElementById("createCustomDays");
+    durationDays = customDaysInput && customDaysInput.value ? parseFloat(customDaysInput.value) : 30;
+  }
   const customKeyPrefix = document.getElementById("createPrefix").value;
   const activateOnFirstUse = document.getElementById("createActivationType").value === "true";
-  const note = document.getElementById("createNote").value;
+  const noteElem = document.getElementById("createNote");
+  const note = noteElem ? noteElem.value : "";
+
 
   const customKeyInput = document.getElementById("createCustomKey") || document.getElementById("createModalCustomKey");
   const customAccountInput = document.getElementById("createCustomAccount") || document.getElementById("createModalCustomAccount");
