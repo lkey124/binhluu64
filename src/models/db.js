@@ -1,10 +1,13 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { encryptText, decryptText, hashClientKey, verifyClientKeyHash } = require('../config/security');
 
-const DB_FILE_PATH = process.env.VERCEL 
-  ? path.join('/tmp', 'vault.json') 
+const isCloudEnv = Boolean(process.env.VERCEL || process.env.RENDER || process.env.NODE_ENV === 'production');
+const DB_FILE_PATH = isCloudEnv 
+  ? path.join(os.tmpdir(), 'vault.json') 
   : path.join(__dirname, '../../data/vault.json');
+
 
 // Cấu trúc dữ liệu ban đầu
 const defaultData = {

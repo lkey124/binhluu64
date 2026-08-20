@@ -5,12 +5,21 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 require('dotenv').config();
 
+// Chống crash toàn cục khi deploy trên Render / Cloud
+process.on('uncaughtException', (err) => {
+  console.warn('⚠️ [Uncaught Exception Safe Guard]:', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.warn('⚠️ [Unhandled Rejection Safe Guard]:', reason);
+});
+
 const apiRoutes = require('./routes/api');
 const db = require('./models/db');
 const { scannerTrapMiddleware } = require('./config/security');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 
 // 1. Tắt Header nhận diện Server Express & Bật Gzip/Brotli nén siêu tốc
 app.disable('x-powered-by');
