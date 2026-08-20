@@ -4,8 +4,10 @@
   "description": "Netflix VIP License Gateway System",
   "main": "api/index.js",
   "scripts": {
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "build": "echo build success"
   },
+
   "dependencies": {
     "axios": "^1.7.9",
     "bcryptjs": "^2.4.3",
