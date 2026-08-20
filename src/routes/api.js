@@ -109,7 +109,7 @@ router.post('/verify', keyVerificationLimiter, async (req, res) => {
     });
   }
 
-  // 2. Nếu không có gán riêng, tự động lấy luồng từ Két nguồn chung:
+  // 2. Nếu không có gán riêng, cố gắng lấy luồng từ Key nguồn Luna:
   try {
     const streamResult = await lunakeyService.fetchNetflixDirectLink();
     
@@ -124,13 +124,45 @@ router.post('/verify', keyVerificationLimiter, async (req, res) => {
       message: 'Xác thực thành công! Sẵn sàng vào Netflix.'
     });
   } catch (err) {
-    console.error('Relay Error:', err.message);
+    console.warn('Luna relay gặp sự cố/hết hạn. Tự động chuyển qua Kho Tài Khoản Dự Phòng:', err.message);
+
+    // 3. TỰ ĐỘNG CHUYỂN QUA KHO TÀI KHOẢN DỰ PHÒNG CỦA ADMIN (ZERO-DOWNTIME):
+    const savedAccounts = db.getSavedAccounts();
+    if (savedAccounts && savedAccounts.length > 0) {
+      // Lấy tài khoản dự phòng từ kho
+      const acc = savedAccounts[0]; // Hoặc xoay vòng
+      let fallbackDetails = null;
+      let fallbackUrl = acc.pcUrl || 'https://www.netflix.com/login';
+
+      if (acc.email) {
+        fallbackDetails = {
+          email: acc.email,
+          password: acc.password || '',
+          profile: acc.profile || 'Hồ sơ cá nhân',
+          pin: acc.pin || 'Không có PIN'
+        };
+      }
+
+      return res.json({
+        success: true,
+        type: 'user',
+        directUrl: fallbackUrl,
+        accountDetails: fallbackDetails,
+        isFallback: true,
+        isDemo: false,
+        expiresAt: validation.expiresAt,
+        daysRemaining: validation.daysRemaining,
+        message: 'Đã chuyển sang tài khoản dự phòng VIP thành công!'
+      });
+    }
+
     return res.status(502).json({
       success: false,
       error: 'Máy chủ phát luồng VIP đang bận hoặc quá tải. Vui lòng bấm thử lại sau 30 giây!'
     });
   }
 });
+
 
 
 
