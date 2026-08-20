@@ -1,0 +1,250 @@
+const fs = require('fs');
+const path = require('path');
+const { encryptText, decryptText, hashClientKey, verifyClientKeyHash } = require('../config/security');
+
+const DB_FILE_PATH = process.env.VERCEL 
+  ? path.join('/tmp', 'vault.json') 
+  : path.join(__dirname, '../../data/vault.json');
+
+// Cấu trúc dữ liệu ban đầu
+const defaultData = {
+  sourceConfig: {
+    apiUrl: process.env.LUNAKEY_API_URL || 'https://netflix.lunakey.net/api/get-link',
+    encryptedKey: encryptText(process.env.MASTER_SOURCE_KEY || process.env.LUNAKEY_SOURCE_KEY || 'default_source_key'),
+    updatedAt: new Date().toISOString(),
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Referer': 'https://netflix.lunakey.net/',
+      'Origin': 'https://netflix.lunakey.net'
+    }
+  },
+  clientKeys: [],
+  accessLogs: []
+};
+
+
+class DatabaseManager {
+  constructor() {
+    this.data = this.loadData();
+  }
+
+  loadData() {
+    try {
+      if (!fs.existsSync(DB_FILE_PATH)) {
+        this.saveData(defaultData);
+        return defaultData;
+      }
+      const raw = fs.readFileSync(DB_FILE_PATH, 'utf8');
+      return JSON.parse(raw);
+    } catch (err) {
+      console.error('Lỗi khi đọc Database:', err.message);
+      return defaultData;
+    }
+  }
+
+  saveData(dataToSave = this.data) {
+    try {
+      const dir = path.dirname(DB_FILE_PATH);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(DB_FILE_PATH, JSON.stringify(dataToSave, null, 2), 'utf8');
+    } catch (err) {
+      console.error('Lỗi khi ghi Database:', err.message);
+    }
+  }
+
+  // --- SOURCE CONFIG ---
+  getSourceConfig() {
+    this.loadData();
+    const decryptedKey = decryptText(this.data.sourceConfig.encryptedKey);
+
+    return {
+      apiUrl: this.data.sourceConfig.apiUrl,
+      sourceKey: decryptedKey,
+      updatedAt: this.data.sourceConfig.updatedAt
+    };
+  }
+
+  updateSourceConfig(apiUrl, newSourceKey) {
+    if (apiUrl) this.data.sourceConfig.apiUrl = apiUrl.trim();
+    if (newSourceKey) {
+      this.data.sourceConfig.encryptedKey = encryptText(newSourceKey.trim());
+      this.data.sourceConfig.updatedAt = new Date().toISOString();
+    }
+    this.saveData();
+    return { success: true, updatedAt: this.data.sourceConfig.updatedAt };
+  }
+
+  // --- CLIENT KEY CREATION (ZERO-PLAINTEXT) ---
+  createClientKey({ durationDays = 30, note = '', activateOnFirstUse = true, customKeyPrefix = 'NFLX' }) {
+    // Sinh Key ngẫu nhiên an toàn: VD: NFLX-9A7B-4E2C-8819
+    const randomBlock = Math.random().toString(36).substring(2, 6).toUpperCase() + '-' +
+                        Math.random().toString(36).substring(2, 6).toUpperCase() + '-' +
+                        Math.floor(1000 + Math.random() * 9000);
+    const rawKey = customKeyPrefix.trim().toUpperCase() + '-' + randomBlock;
+
+
+    // Băm mật mã một chiều - DB không lưu rawKey!
+    const { hash, salt } = hashClientKey(rawKey);
+
+    const now = new Date();
+    let expiresAt = null;
+    if (!activateOnFirstUse) {
+      expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    const keyRecord = {
+      id: 'key_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      displayPrefix: rawKey.substring(0, 9) + '****', // Chỉ để Admin nhận diện
+      keyHash: hash,
+      salt: salt,
+      durationDays: parseInt(durationDays),
+      activateOnFirstUse: !!activateOnFirstUse,
+      createdAt: now.toISOString(),
+      activatedAt: activateOnFirstUse ? null : now.toISOString(),
+      expiresAt: expiresAt,
+      status: 'active', // 'active' | 'revoked'
+      useCount: 0,
+      lastUsedAt: null,
+      note: note.trim()
+    };
+
+    this.data.clientKeys.unshift(keyRecord);
+    this.saveData();
+
+    // Trả về rawKey 1 LẦN DUY NHẤT để Admin copy
+    return {
+      rawKey: rawKey,
+      keyRecord: keyRecord
+    };
+  }
+
+  // --- CLIENT KEY VERIFICATION ---
+  verifyAndConsumeKey(inputKey, clientIp = '') {
+    this.loadData(); // Đảm bảo luôn đồng bộ dữ liệu mới nhất từ đĩa
+    const trimmed = inputKey.trim();
+    
+    // Tìm trong danh sách hash
+    const match = this.data.clientKeys.find(k => verifyClientKeyHash(trimmed, k.keyHash, k.salt));
+
+
+    if (!match) {
+      this.logAccess(null, clientIp, false, 'Key không tồn tại hoặc sai');
+      return { success: false, reason: 'Mã Key không hợp lệ hoặc không tồn tại!' };
+    }
+
+    if (match.status === 'revoked') {
+      this.logAccess(match.id, clientIp, false, 'Key đã bị Admin khóa');
+      return { success: false, reason: 'Mã Key này đã bị tạm dừng hoặc thu hồi!' };
+    }
+
+    const now = new Date();
+
+    // Kích hoạt lần đầu nếu chưa kích hoạt
+    if (!match.activatedAt && match.activateOnFirstUse) {
+      match.activatedAt = now.toISOString();
+      match.expiresAt = new Date(now.getTime() + match.durationDays * 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    // Kiểm tra hết hạn
+    if (match.expiresAt && new Date(match.expiresAt) < now) {
+      this.logAccess(match.id, clientIp, false, 'Key đã hết hạn');
+      return { success: false, reason: 'Mã Key đã hết hạn sử dụng!' };
+    }
+
+    // Cập nhật thống kê
+    match.useCount = (match.useCount || 0) + 1;
+    match.lastUsedAt = now.toISOString();
+    this.saveData();
+
+    this.logAccess(match.id, clientIp, true, 'Kích hoạt / Lấy link thành công');
+
+    return {
+      success: true,
+      keyId: match.id,
+      expiresAt: match.expiresAt,
+      daysRemaining: match.expiresAt ? Math.max(0, Math.ceil((new Date(match.expiresAt) - now) / (1000 * 60 * 60 * 24))) : match.durationDays
+    };
+  }
+
+  // --- ADMIN MANAGEMENT ACTIONS ---
+  getAllKeysForAdmin() {
+    const now = new Date();
+    return this.data.clientKeys.map(k => {
+      let isExpired = false;
+      let daysRemaining = null;
+      if (k.expiresAt) {
+        isExpired = new Date(k.expiresAt) < now;
+        daysRemaining = Math.max(0, Math.ceil((new Date(k.expiresAt) - now) / (1000 * 60 * 60 * 24)));
+      } else {
+        daysRemaining = k.durationDays;
+      }
+
+      return {
+        id: k.id,
+        displayPrefix: k.displayPrefix,
+        durationDays: k.durationDays,
+        activateOnFirstUse: k.activateOnFirstUse,
+        createdAt: k.createdAt,
+        activatedAt: k.activatedAt,
+        expiresAt: k.expiresAt,
+        status: k.status,
+        isExpired: isExpired,
+        daysRemaining: daysRemaining,
+        useCount: k.useCount,
+        lastUsedAt: k.lastUsedAt,
+        note: k.note
+      };
+    });
+  }
+
+  toggleKeyStatus(keyId) {
+    const key = this.data.clientKeys.find(k => k.id === keyId);
+    if (!key) return null;
+    key.status = key.status === 'active' ? 'revoked' : 'active';
+    this.saveData();
+    return key;
+  }
+
+  renewKey(keyId, extraDays = 30) {
+    const key = this.data.clientKeys.find(k => k.id === keyId);
+    if (!key) return null;
+
+    const now = new Date();
+    const baseTime = (key.expiresAt && new Date(key.expiresAt) > now) ? new Date(key.expiresAt) : now;
+    key.expiresAt = new Date(baseTime.getTime() + extraDays * 24 * 60 * 60 * 1000).toISOString();
+    key.durationDays = (key.durationDays || 0) + extraDays;
+    key.status = 'active';
+    this.saveData();
+    return key;
+  }
+
+  deleteKey(keyId) {
+    const index = this.data.clientKeys.findIndex(k => k.id === keyId);
+    if (index === -1) return false;
+    this.data.clientKeys.splice(index, 1);
+    this.saveData();
+    return true;
+  }
+
+  logAccess(keyId, ip, success, message) {
+    this.data.accessLogs.unshift({
+      timestamp: new Date().toISOString(),
+      keyId: keyId || 'UNKNOWN',
+      ip: ip || '127.0.0.1',
+      success: !!success,
+      message: message
+    });
+    if (this.data.accessLogs.length > 200) {
+      this.data.accessLogs.pop();
+    }
+    this.saveData();
+  }
+
+  getLogs() {
+    return this.data.accessLogs.slice(0, 50);
+  }
+}
+
+module.exports = new DatabaseManager();

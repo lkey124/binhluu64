@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Netflix VIP Gateway - Cổng Kích Hoạt Bản Quyền</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Ambient Glow Effects -->
+  <div class="glow-bg top-left"></div>
+  <div class="glow-bg bottom-right"></div>
+  <div class="vignette-overlay"></div>
+
+  <!-- Header -->
+  <header class="main-header">
+    <div class="logo-group">
+      <span class="netflix-text">NETFLIX</span>
+      <span class="badge-vip">VIP GATEWAY</span>
+    </div>
+    <div class="system-status">
+      <span class="status-dot pulse"></span>
+      <span class="status-label">Hệ thống: Trực tuyến</span>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    <div class="gateway-card" id="gatewayCard">
+      <div class="card-header">
+        <div class="icon-circle">
+          <i class="fa-solid fa-film"></i>
+        </div>
+        <h1 class="card-title">CỔNG XÁC THỰC BẢN QUYỀN</h1>
+        <p class="card-subtitle">Nhập mã Key của bạn để mở khóa phiên xem phim chất lượng 4K Ultra HD</p>
+      </div>
+
+      <!-- Input Form State -->
+      <form id="keyForm" class="key-form" onsubmit="event.preventDefault(); handleVerify(event);">
+
+        <div class="input-wrapper">
+          <i class="fa-solid fa-key input-icon"></i>
+          <input 
+            type="text" 
+            id="keyInput" 
+            placeholder="Ví dụ: NFLX-VIP-XXXX-XXXX" 
+            autocomplete="off" 
+            spellcheck="false"
+            required
+          >
+          <button type="button" class="btn-paste" onclick="pasteFromClipboard()" title="Dán từ bộ nhớ tạm">
+            <i class="fa-regular fa-clipboard"></i>
+          </button>
+        </div>
+
+        <button type="submit" id="btnSubmit" class="btn-primary">
+          <span class="btn-text"><i class="fa-solid fa-play"></i> KÍCH HOẠT & VÀO XEM</span>
+          <span class="btn-loader hidden"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang xác thực...</span>
+        </button>
+      </form>
+
+      <!-- Alert Box -->
+      <div id="alertBox" class="alert-box hidden">
+        <i class="fa-solid fa-triangle-exclamation alert-icon"></i>
+        <span id="alertMsg" class="alert-msg"></span>
+      </div>
+
+      <!-- Success State - Giao diện chuẩn phong cách Luna -->
+      <div id="successCard" class="luna-success-view hidden">
+        <div class="luna-check-wrapper">
+          <div class="luna-check-icon">
+            <i class="fa-solid fa-check"></i>
+          </div>
+        </div>
+
+        <h2 class="luna-result-title">Link đăng nhập của bạn</h2>
+        <div class="luna-glow-bar"></div>
+
+        <!-- Meta info badges -->
+        <div class="luna-stats-row">
+          <div class="luna-stat-box">
+            <span class="stat-tag">PLAN</span>
+            <strong class="stat-text" id="lunaPlan">Cao cấp</strong>
+          </div>
+          <div class="luna-stat-box">
+            <span class="stat-tag">COUNTRY</span>
+            <strong class="stat-text" id="lunaCountry">KW</strong>
+          </div>
+          <div class="luna-stat-box">
+            <span class="stat-tag">STREAMS</span>
+            <strong class="stat-text" id="lunaStreams">4</strong>
+          </div>
+        </div>
+
+        <!-- ID Hiện Tại & Đổi ID -->
+        <div class="luna-id-card">
+          <div class="id-info">
+            <span class="id-tag">ID HIỆN TẠI</span>
+            <strong class="id-text" id="lunaCurrentId">ABC #2624</strong>
+          </div>
+          <button type="button" class="btn-luna-change-id" onclick="changeLunaId()">
+            Đổi ID khi lỗi
+          </button>
+        </div>
+
+        <!-- 3 Nền tảng thiết bị: PC, Mobile, TV -->
+        <div class="luna-platform-list">
+          <!-- PC -->
+          <div class="luna-platform-card">
+            <div class="platform-header">
+              <i class="fa-solid fa-laptop"></i> PC
+            </div>
+            <div class="platform-action-row">
+              <input type="text" id="pcUrlInput" readonly class="luna-url-input">
+              <button type="button" class="btn-luna-copy" onclick="copyPlatformUrl('pcUrlInput')">Copy</button>
+              <a id="btnOpenPc" href="#" target="_blank" rel="noopener noreferrer" class="btn-luna-open">Mở</a>
+            </div>
+          </div>
+
+          <!-- Mobile -->
+          <div class="luna-platform-card">
+            <div class="platform-header">
+              <i class="fa-solid fa-mobile-screen"></i> Mobile
+            </div>
+            <div class="platform-action-row">
+              <input type="text" id="mobileUrlInput" readonly class="luna-url-input">
+              <button type="button" class="btn-luna-copy" onclick="copyPlatformUrl('mobileUrlInput')">Copy</button>
+              <a id="btnOpenMobile" href="#" target="_blank" rel="noopener noreferrer" class="btn-luna-open">Mở</a>
+            </div>
+          </div>
+
+          <!-- TV -->
+          <div class="luna-platform-card">
+            <div class="platform-header">
+              <i class="fa-solid fa-tv"></i> TV (netflix.com/tv2)
+            </div>
+            <div class="platform-action-row">
+              <input type="text" id="tvUrlInput" readonly class="luna-url-input">
+              <button type="button" class="btn-luna-copy" onclick="copyPlatformUrl('tvUrlInput')">Copy</button>
+              <a id="btnOpenTv" href="#" target="_blank" rel="noopener noreferrer" class="btn-luna-open">Mở</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hướng dẫn & Lưu ý quan trọng chuẩn Luna -->
+        <div class="luna-guidance-section">
+          <!-- Hộp Vàng: Nếu hiện ô nhập email/pass -->
+          <div class="luna-notice-box yellow">
+            <div class="notice-title">
+              <span class="bullet yellow"></span> Nếu Netflix hiện ô nhập email hoặc mật khẩu
+            </div>
+            <p class="notice-desc">
+              Link đã hết hạn. <strong>Không nhập</strong> bất kỳ thông tin đăng nhập nào. Hãy copy mã của bạn, quay lại trang nhận link và nhập lại mã để lấy link mới.
+            </p>
+          </div>
+
+          <!-- Hộp Xanh: Mẹo xem trên điện thoại -->
+          <div class="luna-notice-box blue">
+            <div class="notice-title">
+              <span class="bullet blue"></span> Mẹo xem trên điện thoại
+            </div>
+            <ol class="guide-steps">
+              <li>Đăng xuất tài khoản Netflix hiện tại và xoá ứng dụng Netflix.</li>
+              <li>Copy link kích hoạt ở trên rồi mở bằng trình duyệt trên điện thoại.</li>
+              <li>Khi thấy chữ <code>netflix.com/unsupported</code> , nhấn <strong>Open App</strong>.</li>
+              <li>Cài lại Netflix từ Play Store / App Store nếu chưa có.</li>
+              <li>Mở Netflix, rồi quay lại trình duyệt và nhấn <strong>Open App</strong> lần nữa.</li>
+              <li>Đợi khoảng 30 giây — Netflix sẽ hoạt động trên ứng dụng mobile.</li>
+            </ol>
+          </div>
+
+          <!-- Hộp Đỏ: Người dùng iPhone Safari -->
+          <div class="luna-notice-box red">
+            <div class="notice-title">
+              <span class="bullet red"></span> Người dùng iPhone — lưu ý quan trọng
+            </div>
+            <p class="notice-desc">
+              Vào <strong>Cài đặt → Ứng dụng → Safari</strong> và tắt <strong>“Chặn cửa sổ bật lên” (Block Pop-ups)</strong>. Nếu để bật, Safari sẽ âm thầm chặn redirect kích hoạt và link sẽ không mở được ứng dụng Netflix.
+            </p>
+          </div>
+        </div>
+
+        <!-- Nút Quay Lại -->
+        <button type="button" class="btn-luna-back" onclick="resetKeyForm()">
+          <i class="fa-solid fa-arrow-left"></i> Quay lại
+        </button>
+      </div>
+
+
+      <!-- Security Notice & Author Footer -->
+      <div class="card-footer" style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
+        <div class="security-tag">
+          <i class="fa-solid fa-shield-halved"></i> Bảo mật Zero-Knowledge • Mã hóa AES-256
+        </div>
+        <div style="font-size: 11px; color: #64748b; font-weight: 500; letter-spacing: 0.5px;">
+          © 2026 Powered & Secured by <strong style="color: #cbd5e1;">binhluu</strong>
+        </div>
+      </div>
+    </div>
+  </main>
+
+
+  <!-- ============================================================== -->
+  <!-- ADMIN DASHBOARD MODAL (CHỈ HIỆN KHI NHẬP MASTER KEY) -->
+  <!-- ============================================================== -->
+  <div id="adminModal" class="admin-modal hidden">
+    <div class="admin-dialog">
+      <!-- Admin Header -->
+      <div class="admin-header">
+        <div class="admin-title-group">
+          <i class="fa-solid fa-user-shield admin-icon"></i>
+          <div>
+            <h2>TRUNG TÂM QUẢN TRỊ (ADMIN PORTAL)</h2>
+            <p>Hệ thống phân phối mã bản quyền & Quản lý Key nguồn bảo mật</p>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="closeAdminModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Admin Navigation Tabs -->
+      <div class="admin-tabs">
+        <button class="tab-btn active" onclick="switchAdminTab('overview')">
+          <i class="fa-solid fa-chart-pie"></i> Tổng quan
+        </button>
+        <button class="tab-btn" onclick="switchAdminTab('create')">
+          <i class="fa-solid fa-plus-circle"></i> Tạo Key Mới
+        </button>
+        <button class="tab-btn" onclick="switchAdminTab('manage')">
+          <i class="fa-solid fa-list-check"></i> Danh sách Key
+        </button>
+        <button class="tab-btn" onclick="switchAdminTab('source')">
+          <i class="fa-solid fa-server"></i> Key Nguồn Stream
+        </button>
+        <button class="tab-btn" onclick="switchAdminTab('logs')">
+          <i class="fa-solid fa-clock-rotate-left"></i> Nhật ký
+        </button>
+      </div>
+
+      <!-- Tab 1: Tổng Quan -->
+      <div id="tab-overview" class="tab-pane active">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-num" id="statTotal">0</span>
+            <span class="stat-label">Tổng số Key đã tạo</span>
+          </div>
+          <div class="stat-card green">
+            <span class="stat-num" id="statActive">0</span>
+            <span class="stat-label">Key đang hoạt động</span>
+          </div>
+          <div class="stat-card yellow">
+            <span class="stat-num" id="statExpired">0</span>
+            <span class="stat-label">Key đã hết hạn</span>
+          </div>
+          <div class="stat-card red">
+            <span class="stat-num" id="statRevoked">0</span>
+            <span class="stat-label">Key đã bị khóa</span>
+          </div>
+        </div>
+
+        <div class="source-status-card">
+          <div class="source-info-left">
+            <i class="fa-solid fa-link"></i>
+            <div>
+              <h4>Trạng thái Key Nguồn Hệ Thống:</h4>
+              <p id="sourceStatusText">Đang bảo vệ trong Két mã hóa AES-256</p>
+            </div>
+          </div>
+          <button class="btn-test-source" onclick="switchAdminTab('source')">
+            <i class="fa-solid fa-gear"></i> Cấu hình nguồn
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab 2: Tạo Key Mới -->
+      <div id="tab-create" class="tab-pane">
+        <form id="createKeyForm" onsubmit="handleCreateKeys(event)" class="admin-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Số lượng Key muốn tạo:</label>
+              <input type="number" id="createCount" value="1" min="1" max="50" required>
+            </div>
+            <div class="form-group">
+              <label>Thời hạn sử dụng:</label>
+              <select id="createDuration">
+                <option value="7">7 Ngày (Dùng thử)</option>
+                <option value="30" selected>30 Ngày (1 Tháng)</option>
+                <option value="90">90 Ngày (3 Tháng)</option>
+                <option value="180">180 Ngày (6 Tháng)</option>
+                <option value="365">365 Ngày (1 Năm)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tiền tố Key (Prefix):</label>
+              <input type="text" id="createPrefix" value="NFLX-VIP" placeholder="VD: NFLX-VIP">
+            </div>
+            <div class="form-group">
+              <label>Cơ chế tính hạn:</label>
+              <select id="createActivationType">
+                <option value="true" selected>Tính hạn từ lần đầu khách nhập key</option>
+                <option value="false">Tính hạn ngay từ thời điểm tạo</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group full-width">
+            <label>Ghi chú (Tên khách hàng / Đơn hàng):</label>
+            <input type="text" id="createNote" placeholder="VD: Bán cho khách Nguyen Van A qua Zalo">
+          </div>
+          <button type="submit" class="btn-primary-admin">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> SINH MÃ KEY NGAY
+          </button>
+        </form>
+
+        <!-- Hộp hiển thị kết quả tạo Key -->
+        <div id="createdResultBox" class="created-result-box hidden">
+          <div class="result-header">
+            <h4><i class="fa-solid fa-key"></i> DANH SÁCH KEY VỪA TẠO (CHỈ HIỆN 1 LẦN DUY NHẤT)</h4>
+            <button class="btn-copy-all" onclick="copyCreatedKeys()">
+              <i class="fa-regular fa-copy"></i> Sao chép tất cả
+            </button>
+          </div>
+          <p class="warning-text">⚠️ <strong>Cảnh báo bảo mật:</strong> Để đảm bảo an toàn tuyệt đối, hệ thống chỉ lưu mã băm (Hash) một chiều vào cơ sở dữ liệu. Vui lòng copy và lưu lại các mã Key này ngay!</p>
+          <textarea id="createdKeysOutput" readonly rows="5"></textarea>
+        </div>
+      </div>
+
+      <!-- Tab 3: Quản Lý Key -->
+      <div id="tab-manage" class="tab-pane">
+        <div class="table-toolbar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="tableSearch" placeholder="Tìm theo tiền tố hoặc ghi chú..." oninput="filterKeyTable()">
+          </div>
+          <div class="filter-group">
+            <button class="btn-filter active" onclick="setTableFilter('all', this)">Tất cả</button>
+            <button class="btn-filter" onclick="setTableFilter('active', this)">Đang dùng</button>
+            <button class="btn-filter" onclick="setTableFilter('expired', this)">Hết hạn</button>
+            <button class="btn-filter" onclick="setTableFilter('revoked', this)">Đã khóa</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Mã Key (Masked)</th>
+                <th>Gói</th>
+                <th>Hạn dùng</th>
+                <th>Trạng thái</th>
+                <th>Lượt dùng</th>
+                <th>Ghi chú</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="keyTableBody">
+              <!-- Sẽ render động bằng JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 4: Cấu Hình Nguồn Stream -->
+      <div id="tab-source" class="tab-pane">
+        <div class="source-config-card">
+          <h3><i class="fa-solid fa-server"></i> THAY NÓNG KEY NGUỒN HỆ THỐNG</h3>
+          <p class="desc">Khi Key nguồn hết hạn hoặc cần đổi mới, bạn chỉ cần dán Key mới vào đây và bấm lưu. Toàn bộ khách hàng sẽ tiếp tục xem được bình thường mà không cần đổi key của họ!</p>
+
+          <!-- Thẻ hiển thị Key nguồn hiện tại đang lưu trong hệ thống -->
+          <div class="current-source-status-box" style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 700; color: #4ade80; letter-spacing: 0.5px;"><i class="fa-solid fa-circle-check"></i> KEY NGUỒN ĐANG HOẠT ĐỘNG:</span>
+              <span id="sourceModalLastUpdated" style="font-size: 11px; color: var(--text-muted);">Vừa cập nhật</span>
+            </div>
+            <div style="font-family: monospace; font-size: 15px; font-weight: 700; color: #ffffff; background: #000; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);" id="currentSavedModalKeyBadge">
+              Đang tải...
+            </div>
+          </div>
+
+          <form id="sourceConfigForm" onsubmit="event.preventDefault(); handleUpdateSource(event);">
+            <div class="form-group">
+              <label>API Endpoint Máy Chủ:</label>
+              <input type="text" id="sourceModalApiUrl" value="https://netflix.lunakey.net/api/get-link" required>
+            </div>
+            <div class="form-group">
+              <label>Dán Key nguồn Stream mới (để cập nhật):</label>
+              <input type="text" id="sourceModalKeyInput" placeholder="Dán key nguồn mới vào đây và bấm lưu..." required autocomplete="off">
+            </div>
+
+            <div class="btn-group">
+              <button type="submit" class="btn-primary-admin">
+                <i class="fa-solid fa-floppy-disk"></i> Lưu & Cập Nhật Nguồn
+              </button>
+              <button type="button" class="btn-test-conn" onclick="testSourceConnection()">
+                <i class="fa-solid fa-bolt"></i> Test Thử Kết Nối
+              </button>
+            </div>
+          </form>
+
+          <div id="sourceTestResult" class="test-result-box hidden"></div>
+        </div>
+      </div>
+
+
+
+            <div class="btn-group">
+              <button type="submit" class="btn-primary-admin">
+                <i class="fa-solid fa-floppy-disk"></i> Lưu & Cập Nhật Nguồn
+              </button>
+              <button type="button" class="btn-test-conn" onclick="testSourceConnection()">
+                <i class="fa-solid fa-bolt"></i> Test Thử Kết Nối
+              </button>
+            </div>
+          </form>
+
+          <div id="sourceTestResult" class="test-result-box hidden"></div>
+        </div>
+      </div>
+
+      <!-- Tab 5: Nhật Ký Hoạt Động -->
+      <div id="tab-logs" class="tab-pane">
+        <div class="logs-list" id="logsList">
+          <!-- Logs render động -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
