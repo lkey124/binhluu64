@@ -368,7 +368,7 @@
   </div>
 
 
-  <script src="app.js"></script>
+  <script src="app.js?v=3.4.0"></script>
   <script>
     // Tự động kiểm tra token lưu trong session nếu có
     const savedToken = localStorage.getItem('netflix_admin_token');
@@ -382,6 +382,8 @@
       const input = document.getElementById('adminKeyInput').value.trim();
       const alertBox = document.getElementById('loginAlert');
       const alertMsg = document.getElementById('loginAlertMsg');
+      const btn = document.getElementById('btnAdminLogin');
+      if (btn) btn.disabled = true;
 
       try {
         const res = await fetch('/api/verify', {
@@ -400,6 +402,8 @@
       } catch (err) {
         alertMsg.innerText = err.message;
         alertBox.classList.remove('hidden');
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 
@@ -408,6 +412,7 @@
       document.getElementById('adminDashboardView').classList.remove('hidden');
       loadAdminOverview();
     }
+
 
     function logoutAdmin() {
       localStorage.removeItem('netflix_admin_token');

@@ -249,7 +249,18 @@ async function loadAdminOverview() {
       headers: { "Authorization": "Bearer " + currentAdminToken }
     });
     const data = await res.json();
-    if (!data.success) throw new Error(data.error);
+    if (!data.success) {
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem('netflix_admin_token');
+        currentAdminToken = null;
+        const loginBox = document.getElementById('adminLoginBox');
+        const dashView = document.getElementById('adminDashboardView');
+        if (loginBox) loginBox.classList.remove('hidden');
+        if (dashView) dashView.classList.add('hidden');
+      }
+      throw new Error(data.error);
+    }
+
 
     const setElemText = (id, val) => {
       const el = document.getElementById(id);
