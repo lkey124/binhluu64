@@ -160,6 +160,7 @@ router.get('/admin/overview', authenticateAdmin, (req, res) => {
     },
     keys,
     savedAccounts: db.getSavedAccounts(),
+    sourceKeysHistory: db.getSourceKeysHistory(),
     sourceConfig: {
       apiUrl: sourceConfig.apiUrl,
       sourceKeyMasked: sourceConfig.sourceKey ? (sourceConfig.sourceKey.substring(0, 4) + '********') : 'Chưa thiết lập',
@@ -168,6 +169,7 @@ router.get('/admin/overview', authenticateAdmin, (req, res) => {
     logs
   });
 });
+
 
 
 // Tạo Key mới cho khách hàng (Zero-Knowledge)
@@ -345,4 +347,25 @@ router.post('/admin/test-source', authenticateAdmin, async (req, res) => {
   res.json(testRes);
 });
 
+// Kích hoạt Key Nguồn làm nguồn phát chính
+router.post('/admin/activate-source-key', authenticateAdmin, (req, res) => {
+  const { keyId } = req.body;
+  const success = db.activateSourceKey(keyId);
+  if (!success) {
+    return res.status(404).json({ success: false, error: 'Không tìm thấy Key nguồn!' });
+  }
+  res.json({ success: true, message: 'Đã kích hoạt làm Key nguồn chính thành công!' });
+});
+
+// Xóa Key Nguồn khỏi lịch sử
+router.delete('/admin/delete-source-key', authenticateAdmin, (req, res) => {
+  const { keyId } = req.body;
+  const success = db.deleteSourceKey(keyId);
+  if (!success) {
+    return res.status(404).json({ success: false, error: 'Không tìm thấy Key nguồn để xóa!' });
+  }
+  res.json({ success: true, message: 'Đã xóa Key nguồn khỏi lịch sử!' });
+});
+
 module.exports = router;
+

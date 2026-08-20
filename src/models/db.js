@@ -68,13 +68,99 @@ class DatabaseManager {
 
   updateSourceConfig(apiUrl, newSourceKey) {
     if (apiUrl) this.data.sourceConfig.apiUrl = apiUrl.trim();
-    if (newSourceKey) {
-      this.data.sourceConfig.encryptedKey = encryptText(newSourceKey.trim());
+    if (newSourceKey && newSourceKey.trim()) {
+      const cleanKey = newSourceKey.trim();
+      this.data.sourceConfig.encryptedKey = encryptText(cleanKey);
       this.data.sourceConfig.updatedAt = new Date().toISOString();
+
+      if (!this.data.sourceKeysHistory) this.data.sourceKeysHistory = [];
+      // Đặt tất cả key cũ thành standby nếu đang active
+      this.data.sourceKeysHistory.forEach(k => {
+        if (k.status === 'active') k.status = 'standby';
+        k.isCurrent = false;
+      });
+
+      const displayKey = cleanKey.length > 8 
+        ? (cleanKey.substring(0, 4) + '...' + cleanKey.substring(cleanKey.length - 4)) 
+        : cleanKey;
+
+      this.data.sourceKeysHistory.unshift({
+        id: 'src_' + Date.now(),
+        sourceKeyEncrypted: encryptText(cleanKey),
+        displayKey: displayKey,
+        status: 'active', // 'active' | 'expired' | 'standby'
+        errorReason: null,
+        addedAt: new Date().toISOString(),
+        lastTestedAt: new Date().toISOString(),
+        isCurrent: true
+      });
+
+      if (this.data.sourceKeysHistory.length > 50) this.data.sourceKeysHistory.pop();
     }
     this.saveData();
     return { success: true, updatedAt: this.data.sourceConfig.updatedAt };
   }
+
+  markSourceKeyStatus(sourceKey, status = 'expired', errorReason = '') {
+    if (!this.data.sourceKeysHistory) return;
+    this.data.sourceKeysHistory.forEach(k => {
+      try {
+        const dec = decryptText(k.sourceKeyEncrypted);
+        if (dec === sourceKey) {
+          k.status = status;
+          k.errorReason = errorReason;
+          k.lastTestedAt = new Date().toISOString();
+        }
+      } catch {}
+    });
+    this.saveData();
+  }
+
+  getSourceKeysHistory() {
+    this.loadData();
+    if (!this.data.sourceKeysHistory) this.data.sourceKeysHistory = [];
+    return this.data.sourceKeysHistory.map(k => ({
+      id: k.id,
+      displayKey: k.displayKey,
+      status: k.status,
+      errorReason: k.errorReason,
+      addedAt: k.addedAt,
+      lastTestedAt: k.lastTestedAt,
+      isCurrent: !!k.isCurrent
+    }));
+  }
+
+  activateSourceKey(id) {
+    if (!this.data.sourceKeysHistory) return false;
+    const target = this.data.sourceKeysHistory.find(k => k.id === id);
+    if (!target) return false;
+
+    this.data.sourceKeysHistory.forEach(k => {
+      k.isCurrent = false;
+      if (k.status === 'active') k.status = 'standby';
+    });
+
+    target.isCurrent = true;
+    target.status = 'active';
+    target.errorReason = null;
+    target.lastTestedAt = new Date().toISOString();
+
+    const rawKey = decryptText(target.sourceKeyEncrypted);
+    this.data.sourceConfig.encryptedKey = encryptText(rawKey);
+    this.data.sourceConfig.updatedAt = new Date().toISOString();
+    this.saveData();
+    return true;
+  }
+
+  deleteSourceKey(id) {
+    if (!this.data.sourceKeysHistory) return false;
+    const index = this.data.sourceKeysHistory.findIndex(k => k.id === id);
+    if (index === -1) return false;
+    this.data.sourceKeysHistory.splice(index, 1);
+    this.saveData();
+    return true;
+  }
+
 
   // --- CLIENT KEY CREATION (ZERO-PLAINTEXT) ---
   createClientKey({ durationDays = 30, note = '', activateOnFirstUse = true, customKeyPrefix = 'NFLX', customRawKey = '', customAccount = '' }) {

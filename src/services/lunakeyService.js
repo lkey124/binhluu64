@@ -69,6 +69,7 @@ class LunakeyRelayService {
       if (html.includes('Không thể cấp link') || html.includes('Mã định danh không tồn tại') || html.includes('đã bị thu hồi') || html.includes('alert err')) {
         const errMatch = html.match(/class="alert err">([^<]+)<\/div>/);
         const errMsg = errMatch ? errMatch[1] : 'Mã Key nguồn máy chủ không tồn tại hoặc đã hết hạn!';
+        db.markSourceKeyStatus(sourceKey, 'expired', errMsg);
         throw new Error(errMsg);
       }
 
@@ -84,6 +85,8 @@ class LunakeyRelayService {
           directUrl = urlMatch[0];
         }
       }
+
+      db.markSourceKeyStatus(sourceKey, 'active', null);
 
       // Bóc tách Plan, Country, Streams và ID nếu có trong HTML
       let plan = 'Cao cấp';
@@ -106,6 +109,7 @@ class LunakeyRelayService {
 
     } catch (err) {
       console.error('Lỗi khi gọi Stream Relay:', err.message);
+      db.markSourceKeyStatus(sourceKey, 'expired', err.message);
       throw new Error(err.message || 'Không thể kết nối đến máy chủ luồng!');
     }
   }
@@ -154,14 +158,19 @@ class LunakeyRelayService {
       const html = postRes.data || '';
       if (html.includes('Không thể cấp link') || html.includes('Mã định danh không tồn tại') || html.includes('đã bị thu hồi')) {
         const errMatch = html.match(/class="alert err">([^<]+)<\/div>/);
-        return { success: false, error: errMatch ? errMatch[1] : 'Mã Key không tồn tại trên hệ thống nguồn hoặc đã hết hạn!' };
+        const errMsg = errMatch ? errMatch[1] : 'Mã Key không tồn tại trên hệ thống nguồn hoặc đã hết hạn!';
+        db.markSourceKeyStatus(key, 'expired', errMsg);
+        return { success: false, error: errMsg };
       }
 
+      db.markSourceKeyStatus(key, 'active', null);
       return { success: true, message: 'Key nguồn hợp lệ và hoạt động tốt!' };
     } catch (err) {
+      db.markSourceKeyStatus(key, 'expired', err.message);
       return { success: false, error: err.message };
     }
   }
+
 }
 
 module.exports = new LunakeyRelayService();

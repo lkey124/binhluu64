@@ -375,10 +375,34 @@
           </form>
 
           <div id="sourceTestResult" class="test-result-box hidden"></div>
+
+          <!-- Bảng Lịch Sử & Quản Lý Key Nguồn -->
+          <div style="margin-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 20px;">
+            <h4 style="font-size: 14px; font-weight: 800; color: #f8fafc; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-list-ol" style="color: #38bdf8;"></i> LỊCH SỬ CÁC KEY NGUỒN & TRẠNG THÁI (TỰ ĐỘNG BÁO HẾT HẠN)
+            </h4>
+            <div class="table-container">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Mã Key Nguồn</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày thêm</th>
+                    <th>Kiểm tra gần nhất</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="sourceKeysTableBody">
+                  <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 16px;">Đang tải danh sách...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Pane 5: Logs -->
+
       <div id="tab-logs" class="tab-pane">
         <div class="logs-list" id="logsList"></div>
       </div>

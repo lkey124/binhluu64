@@ -225,12 +225,14 @@ async function loadAdminOverview() {
     cachedAdminKeys = data.keys || [];
     renderKeyTable(cachedAdminKeys);
     renderSavedAccounts(data.savedAccounts || []);
+    renderSourceKeysTable(data.sourceKeysHistory || []);
     renderLogs(data.logs || []);
 
   } catch (err) {
     console.error("Lỗi tải Admin Overview:", err);
   }
 }
+
 
 
 function renderKeyTable(keys) {
@@ -582,4 +584,74 @@ function useSavedAccountForNewKey(rawEncoded) {
   if (typeof switchAdminTab === "function") switchAdminTab("create");
   alert("Đã chuyển tài khoản sang form Tạo Key! Bạn chỉ cần điền hạn dùng rồi bấm 'LƯU & TẠO KEY NGAY'.");
 }
+
+function renderSourceKeysTable(history) {
+  const tbody = document.getElementById("sourceKeysTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (!history || history.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='5' style='text-align: center; color: var(--text-muted); padding: 16px;'>Chưa có lịch sử Key nguồn nào được lưu.</td></tr>";
+    return;
+  }
+
+  history.forEach(k => {
+    let statusBadge = "";
+    if (k.isCurrent && k.status === "active") {
+      statusBadge = "<span class='status-pill active' style='background: rgba(34, 197, 94, 0.2); color: #4ade80;'><i class='fa-solid fa-circle-check'></i> Đang phát luồng</span>";
+    } else if (k.status === "expired") {
+      statusBadge = "<span class='status-pill revoked' style='background: rgba(239, 68, 68, 0.2); color: #f87171;' title='" + (k.errorReason || "Key đã hết hạn") + "'><i class='fa-solid fa-triangle-exclamation'></i> Vô hiệu hóa (Hết hạn)</span>";
+    } else {
+      statusBadge = "<span class='status-pill expired' style='background: rgba(148, 163, 184, 0.2); color: #94a3b8;'><i class='fa-solid fa-clock'></i> Dự phòng</span>";
+    }
+
+    const addedTime = new Date(k.addedAt).toLocaleTimeString() + " " + new Date(k.addedAt).toLocaleDateString();
+    const testedTime = k.lastTestedAt ? (new Date(k.lastTestedAt).toLocaleTimeString() + " " + new Date(k.lastTestedAt).toLocaleDateString()) : "Chưa test";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td><strong style='font-family: monospace; font-size: 13px; color: #f8fafc;'>" + k.displayKey + "</strong>" + (k.isCurrent ? " <span style='font-size: 10px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 2px 6px; border-radius: 4px;'>Đang chọn</span>" : "") + "</td>" +
+      "<td>" + statusBadge + (k.errorReason ? ("<br><small style='color: #f87171; font-size: 10px;'>" + k.errorReason + "</small>") : "") + "</td>" +
+      "<td><span style='font-size: 11px; color: var(--text-muted);'>" + addedTime + "</span></td>" +
+      "<td><span style='font-size: 11px; color: var(--text-muted);'>" + testedTime + "</span></td>" +
+      "<td>" +
+        (!k.isCurrent ? "<button class='action-btn renew' title='Kích hoạt làm Key chính' onclick=\"activateSourceKey('" + k.id + "')\"><i class='fa-solid fa-bolt'></i> Dùng key này</button>" : "<span style='font-size: 11px; color: #4ade80; font-weight: 700;'><i class='fa-solid fa-check'></i> Đang dùng</span> ") +
+        "<button class='action-btn delete' title='Xóa khỏi lịch sử' onclick=\"deleteSourceKey('" + k.id + "')\"><i class='fa-solid fa-trash'></i></button>" +
+      "</td>";
+    tbody.appendChild(tr);
+  });
+}
+
+async function activateSourceKey(keyId) {
+  try {
+    const res = await fetch("/api/admin/activate-source-key", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + currentAdminToken },
+      body: JSON.stringify({ keyId })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    loadAdminOverview();
+    alert("✅ " + data.message);
+  } catch (err) {
+    alert("Lỗi kích hoạt: " + err.message);
+  }
+}
+
+async function deleteSourceKey(keyId) {
+  if (!confirm("Bạn có chắc chắn muốn xóa Key nguồn này khỏi danh sách?")) return;
+  try {
+    const res = await fetch("/api/admin/delete-source-key", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + currentAdminToken },
+      body: JSON.stringify({ keyId })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    loadAdminOverview();
+    alert("Đã xóa khỏi danh sách!");
+  } catch (err) {
+    alert("Lỗi xóa: " + err.message);
+  }
+}
+
 
