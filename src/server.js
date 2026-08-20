@@ -59,15 +59,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: 'Máy chủ đang bận. Vui lòng thử lại sau!' });
 });
 
-// 9. Khởi chạy Local Server (Nếu không phải Serverless Vercel)
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  app.listen(PORT, () => {
+// 9. Khởi chạy Server (Tự động thích ứng Render / VPS / Localhost)
+if (!process.env.VERCEL) {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log('\n=====================================================');
-    console.log('🚀 NETFLIX VIP GATEWAY ĐANG CHẠY TẠI: http://localhost:' + PORT);
+    console.log('🚀 NETFLIX VIP GATEWAY ĐANG CHẠY TẠI: http://0.0.0.0:' + PORT);
     console.log('🛡️ BẢO MẬT: Zero-Knowledge Blind Hash + AES-256-GCM + Anti-Bruteforce');
     console.log('=====================================================\n');
   });
-
 }
 
 module.exports = app;
+
