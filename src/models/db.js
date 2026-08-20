@@ -26,6 +26,8 @@ const defaultData = {
 class DatabaseManager {
   constructor() {
     this.data = this.loadData();
+    // Tự động kéo dữ liệu từ Cloud Database khi khởi động nếu có cấu hình
+    this.syncFromCloud();
   }
 
   loadData() {
@@ -49,10 +51,59 @@ class DatabaseManager {
         fs.mkdirSync(dir, { recursive: true });
       }
       fs.writeFileSync(DB_FILE_PATH, JSON.stringify(dataToSave, null, 2), 'utf8');
+      // Đẩy sao lưu lên Cloud Database nếu có
+      this.syncToCloud();
     } catch (err) {
       console.error('Lỗi khi ghi Database:', err.message);
     }
   }
+
+  async syncFromCloud() {
+    const cloudUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+    const cloudToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+    if (!cloudUrl || !cloudToken) return null;
+
+    try {
+      const res = await fetch(`${cloudUrl}/get/netflix_vault_data`, {
+        headers: { Authorization: `Bearer ${cloudToken}` }
+      });
+      const json = await res.json();
+      if (json && json.result) {
+        const parsed = typeof json.result === 'string' ? JSON.parse(json.result) : json.result;
+        if (parsed && parsed.clientKeys) {
+          this.data = { ...defaultData, ...parsed };
+          const dir = path.dirname(DB_FILE_PATH);
+          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+          fs.writeFileSync(DB_FILE_PATH, JSON.stringify(this.data, null, 2), 'utf8');
+          console.log('✅ Đã đồng bộ thành công Két Dữ Liệu từ Cloud Database (Upstash Redis)!');
+          return this.data;
+        }
+      }
+    } catch (err) {
+      console.warn('Lỗi đồng bộ từ Cloud Database:', err.message);
+    }
+    return null;
+  }
+
+  async syncToCloud() {
+    const cloudUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+    const cloudToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+    if (!cloudUrl || !cloudToken) return;
+
+    try {
+      await fetch(`${cloudUrl}/set/netflix_vault_data`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${cloudToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(this.data)
+      });
+    } catch (err) {
+      console.warn('Lỗi ghi dữ liệu lên Cloud Database:', err.message);
+    }
+  }
+
 
   // --- SOURCE CONFIG ---
   getSourceConfig() {
