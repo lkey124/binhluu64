@@ -1,4 +1,4 @@
-﻿# 🎬 Netflix VIP Gateway & Zero-Knowledge License Manager
+# 🎬 Netflix VIP Gateway & Zero-Knowledge License Manager
 
 > Hệ thống Cổng Ủy Quyền & Phân Phối Mã Bản Quyền Netflix trung gian (Proxy Relay), tích hợp cơ chế bảo mật **Zero-Knowledge Blind Hashing**, két mã hóa **AES-256-GCM**, khả năng **thay nóng Key nguồn Lunakey** và **Admin Portal bí mật**.
 
