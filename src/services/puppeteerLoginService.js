@@ -1,13 +1,20 @@
 let puppeteer;
 try {
-  puppeteer = require('puppeteer');
+  const puppeteerExtra = require('puppeteer-extra');
+  const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+  puppeteerExtra.use(StealthPlugin());
+  puppeteer = puppeteerExtra;
 } catch {
-  puppeteer = null;
+  try {
+    puppeteer = require('puppeteer');
+  } catch {
+    puppeteer = null;
+  }
 }
 
 class PuppeteerLoginService {
   /**
-   * Tự động mở trình duyệt ngầm, đăng nhập và lấy nftoken / cookie
+   * Tự động mở trình duyệt ngầm giả lập người thật, đăng nhập và lấy nftoken / cookie
    * @param {string} email
    * @param {string} password
    */
@@ -21,7 +28,7 @@ class PuppeteerLoginService {
 
     let browser = null;
     try {
-      console.log(`🤖 [BOT-PUPPETEER] Bắt đầu mở trình duyệt ngầm cho: ${cleanEmail}...`);
+      console.log(`🤖 [BOT-STEALTH] Mở trình duyệt ngầm bypass cho tài khoản: ${cleanEmail}...`);
 
       browser = await puppeteer.launch({
         headless: 'new',
@@ -34,23 +41,21 @@ class PuppeteerLoginService {
           '--no-zygote',
           '--single-process',
           '--disable-gpu',
-          '--disable-blink-features=AutomationControlled'
+          '--window-size=1366,768'
         ]
       });
 
       const page = await browser.newPage();
 
-      // Giả lập User-Agent chuẩn người dùng thực
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36');
+      // Cấu hình ngôn ngữ và viewport chuẩn
+      await page.setExtraHTTPHeaders({
+        'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7'
+      });
       await page.setViewport({ width: 1366, height: 768 });
 
-      // Gỡ bỏ cờ tự động hóa (Anti-Bot evasion)
-      await page.evaluateOnNewDocument(() => {
-        Object.defineProperty(navigator, 'webdriver', { get: () => false });
-      });
-
-      console.log('🤖 [BOT-PUPPETEER] Đang truy cập https://www.netflix.com/login...');
+      console.log('🤖 [BOT-STEALTH] Đang truy cập Netflix Login...');
       await page.goto('https://www.netflix.com/login', { waitUntil: 'networkidle2', timeout: 25000 });
+
 
       // Điền Email
       const emailSelector = 'input[name="userLoginId"], input[id="id_userLoginId"]';
