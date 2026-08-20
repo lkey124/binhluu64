@@ -658,4 +658,64 @@ async function deleteSourceKey(keyId) {
   }
 }
 
+async function downloadVaultBackup() {
+  try {
+    const res = await fetch("/api/admin/backup-vault", {
+      headers: { "Authorization": "Bearer " + currentAdminToken }
+    });
+    if (!res.ok) throw new Error("Lỗi tải bản sao lưu");
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "netflix_vault_backup_" + new Date().toISOString().slice(0,10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    alert("Lỗi sao lưu: " + err.message);
+  }
+}
+
+async function handleRestoreVaultFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (!confirm("⚠️ Bạn có chắc chắn muốn phục hồi dữ liệu từ file '" + file.name + "'? Toàn bộ danh sách Key và Cấu hình nguồn sẽ được cập nhật lại!")) {
+    event.target.value = "";
+    return;
+  }
+
+  try {
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        const vaultData = JSON.parse(e.target.result);
+        const res = await fetch("/api/admin/restore-vault", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + currentAdminToken
+          },
+          body: JSON.stringify({ vaultData })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        alert("🎉 Phục hồi dữ liệu thành công! Đang làm mới bảng điều khiển...");
+        loadAdminOverview();
+      } catch (parseErr) {
+        alert("Lỗi đọc file: " + parseErr.message);
+      }
+    };
+    reader.readAsText(file);
+  } catch (err) {
+    alert("Lỗi phục hồi: " + err.message);
+  } finally {
+    event.target.value = "";
+  }
+}
+
+
+
 

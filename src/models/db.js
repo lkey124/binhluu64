@@ -406,7 +406,28 @@ class DatabaseManager {
   getLogs() {
     return this.data.accessLogs.slice(0, 50);
   }
+
+  exportVaultData() {
+    this.loadData();
+    return this.data;
+  }
+
+  importVaultData(importedData) {
+    if (!importedData || typeof importedData !== 'object') {
+      throw new Error('Dữ liệu không hợp lệ!');
+    }
+    if (!importedData.clientKeys || !importedData.sourceConfig) {
+      throw new Error('Cấu trúc file sao lưu không đúng định dạng!');
+    }
+    this.data = {
+      ...defaultData,
+      ...importedData
+    };
+    this.saveData(this.data);
+    return true;
+  }
 }
 
 module.exports = new DatabaseManager();
+
 

@@ -427,5 +427,26 @@ router.delete('/admin/delete-source-key', authenticateAdmin, (req, res) => {
   res.json({ success: true, message: 'Đã xóa Key nguồn khỏi lịch sử!' });
 });
 
+// Xuất bản sao lưu dữ liệu Két (Backup Vault)
+router.get('/admin/backup-vault', authenticateAdmin, (req, res) => {
+
+  const backup = db.exportVaultData();
+  res.setHeader('Content-Disposition', 'attachment; filename="netflix_vault_backup_' + Date.now() + '.json"');
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(backup, null, 2));
+});
+
+// Phục hồi dữ liệu Két từ bản sao lưu (Restore Vault)
+router.post('/admin/restore-vault', authenticateAdmin, (req, res) => {
+  try {
+    const { vaultData } = req.body;
+    db.importVaultData(vaultData);
+    res.json({ success: true, message: 'Đã phục hồi toàn bộ dữ liệu Key và Nguồn phát thành công!' });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;
+
 
