@@ -171,7 +171,76 @@ class LunakeyRelayService {
     }
   }
 
+  /**
+   * Sinh link trực tiếp với bất kỳ Key/Code nào
+   */
+  async fetchNetflixDirectLinkWithKey(customKey) {
+
+    const key = (customKey || '').trim();
+    if (!key) throw new Error('Chưa nhập Key để sinh link!');
+
+    if (key.startsWith('demo_') || key.includes('default') || key === 'LUNA_TEST_SAVE_KEY_9999') {
+      return {
+        success: true,
+        directUrl: 'https://www.netflix.com/browse?nftoken=BgAAAW09e99QZ8291038194829104810238',
+        nftoken: 'BgAAAW09e99QZ8291038194829104810238',
+        isDemo: true
+      };
+    }
+
+    const getRes = await axios.get('https://netflix.lunakey.net/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+      },
+      timeout: 8000
+    });
+
+    const cookies = getRes.headers['set-cookie'] ? getRes.headers['set-cookie'].map(c => c.split(';')[0]).join('; ') : '';
+    const csrfMatch = getRes.data.match(/name="csrf" value="([^"]+)"/);
+    const csrfToken = csrfMatch ? csrfMatch[1] : '';
+
+    if (!csrfToken) throw new Error('Không thể khởi tạo kết nối nguồn.');
+
+    const params = new URLSearchParams();
+    params.append('csrf', csrfToken);
+    params.append('code', key);
+
+    const postRes = await axios.post('https://netflix.lunakey.net/redeem', params.toString(), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Referer': 'https://netflix.lunakey.net/',
+        'Origin': 'https://netflix.lunakey.net',
+        'Cookie': cookies
+      },
+      timeout: 10000,
+      validateStatus: () => true
+    });
+
+    const html = postRes.data || '';
+    if (html.includes('Không thể cấp link') || html.includes('Mã định danh không tồn tại') || html.includes('đã bị thu hồi')) {
+      const errMatch = html.match(/class="alert err">([^<]+)<\/div>/);
+      throw new Error(errMatch ? errMatch[1] : 'Key này không hợp lệ hoặc đã hết hạn trên máy chủ nguồn!');
+    }
+
+    const tokenMatch = html.match(/nftoken=([A-Za-z0-9%_-]+)/);
+    if (!tokenMatch) {
+      const urlMatch = html.match(/https:\/\/www\.netflix\.com\/browse\?[^"'\s<>]+/);
+      if (urlMatch) {
+        return { success: true, directUrl: urlMatch[0], nftoken: null };
+      }
+      throw new Error('Máy chủ nguồn không trả về nftoken hợp lệ!');
+    }
+
+    const nftoken = tokenMatch[1];
+    return {
+      success: true,
+      directUrl: 'https://www.netflix.com/browse?nftoken=' + nftoken,
+      nftoken: nftoken
+    };
+  }
 }
 
 module.exports = new LunakeyRelayService();
+
 

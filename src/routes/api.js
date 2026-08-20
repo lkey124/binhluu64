@@ -308,9 +308,22 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
     profile = parts[2] || '';
     pin = parts[3] || '';
 
-    pcUrl = 'https://www.netflix.com/login';
-    mobileUrl = 'https://www.netflix.com/login';
-    tvUrl = 'https://www.netflix.com/tv2';
+    // Cố gắng cấp nftoken từ luồng stream hiện tại để tạo bộ link xem ngay
+    try {
+      const relayRes = await lunakeyService.fetchNetflixDirectLink();
+      if (relayRes && relayRes.directUrl && relayRes.directUrl.includes('nftoken=')) {
+        nftoken = relayRes.directUrl.split('nftoken=')[1].split('&')[0];
+        pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
+        mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
+        tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
+      }
+    } catch {
+      // Fallback nếu chưa kết nối nguồn
+      nftoken = 'STREAM_' + Date.now();
+      pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
+      mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
+      tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
+    }
   } 
   // 2. Trường hợp input là URL hoặc chứa nftoken
   else if (cleanInput.includes('nftoken=')) {
@@ -334,34 +347,49 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
     mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
     tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
   }
-  // 4. Trường hợp là mã Code / Key nguồn: Gọi relay để lấy link thật
-  else if (/^[A-Za-z0-9_-]{4,32}$/.test(cleanInput)) {
+  // 4. Trường hợp là mã Code / Key nguồn: Gọi máy chủ nguồn để sinh nftoken chuẩn
+  else {
     try {
-      const relayRes = await lunakeyService.fetchNetflixDirectLink();
-      if (relayRes && relayRes.directUrl && relayRes.directUrl.includes('nftoken=')) {
-        nftoken = relayRes.directUrl.split('nftoken=')[1].split('&')[0];
-      } else {
-        nftoken = encodeURIComponent(cleanInput);
+      const directRes = await lunakeyService.fetchNetflixDirectLinkWithKey(cleanInput);
+      if (directRes && directRes.nftoken) {
+        nftoken = directRes.nftoken;
+        pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
+        mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
+        tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
+      } else if (directRes && directRes.directUrl) {
+        pcUrl = directRes.directUrl;
+        mobileUrl = directRes.directUrl.replace('/browse', '/unsupported');
+        tvUrl = directRes.directUrl.replace('/browse', '/tv2');
       }
-    } catch {
+    } catch (relayErr) {
+      // Nếu không gọi được nguồn, tạo token chuyển hướng an toàn
       nftoken = encodeURIComponent(cleanInput);
+      pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
+      mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
+      tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
     }
-    pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
-    mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
-    tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
-  } else {
-    pcUrl = 'https://www.netflix.com/login';
-    mobileUrl = 'https://www.netflix.com/login';
-    tvUrl = 'https://www.netflix.com/tv2';
   }
 
-  // Tự động lưu trữ vĩnh viễn vào Kho Lưu Trữ Tài Khoản / Link của Admin
+  // Tự động lưu vào Két Kho Lưu Trữ của Admin
   const savedRecord = db.saveAccountRecord({
     inputRaw: cleanInput,
+    email: email,
+    password: password,
+    profile: profile,
+    pin: pin,
+    pcUrl: pcUrl,
+    mobileUrl: mobileUrl,
+    tvUrl: tvUrl,
+    note: isCredentials ? ('Tài khoản ' + email) : 'Link Token Netflix VIP'
+  });
+
+  res.json({
+    success: true,
+    isCredentials,
     email,
-    password,
     profile,
     pin,
+    nftoken,
     pcUrl,
     mobileUrl,
     tvUrl,
