@@ -33,11 +33,19 @@
     <div class="gateway-card" id="gatewayCard">
       <div class="card-header">
         <div class="icon-circle">
-          <i class="fa-solid fa-film"></i>
+          <i class="fa-solid fa-crown" style="color: #facc15;"></i>
         </div>
         <h1 class="card-title">NETFLIX VIP</h1>
-        <p class="card-subtitle">Nhập mã Key để mở khóa phiên xem phim chất lượng 4K Ultra HD</p>
+        
+        <!-- Giới thiệu trang mua hàng -->
+        <div class="shop-promo-box" style="margin-top: 12px; background: rgba(229, 9, 20, 0.08); border: 1px solid rgba(229, 9, 20, 0.25); border-radius: 12px; padding: 10px 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; flex-wrap: wrap;">
+          <span style="color: #cbd5e1;">Chưa có mã Key?</span>
+          <a href="https://binhluu.ai.studio/" target="_blank" rel="noopener noreferrer" style="color: #f87171; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border-bottom: 1px dashed #f87171;">
+            <i class="fa-solid fa-cart-shopping"></i> Mua Key tại binhluu.ai.studio <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i>
+          </a>
+        </div>
       </div>
+
 
       <!-- Input Form State -->
       <form id="keyForm" class="key-form" onsubmit="event.preventDefault(); handleVerify(event);">
@@ -203,247 +211,10 @@
           © 2026 Powered & Secured by <strong style="color: #cbd5e1;">binhluu</strong>
         </div>
       </div>
-    </div>
   </main>
 
-
-  <!-- ============================================================== -->
-  <!-- ADMIN DASHBOARD MODAL (CHỈ HIỆN KHI NHẬP MASTER KEY) -->
-  <!-- ============================================================== -->
-  <div id="adminModal" class="admin-modal hidden">
-    <div class="admin-dialog">
-      <!-- Admin Header -->
-      <div class="admin-header">
-        <div class="admin-title-group">
-          <i class="fa-solid fa-user-shield admin-icon"></i>
-          <div>
-            <h2>TRUNG TÂM QUẢN TRỊ (ADMIN PORTAL)</h2>
-            <p>Hệ thống phân phối mã bản quyền & Quản lý Key nguồn bảo mật</p>
-          </div>
-        </div>
-        <button class="btn-close-modal" onclick="closeAdminModal()">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <!-- Admin Navigation Tabs -->
-      <div class="admin-tabs">
-        <button class="tab-btn active" onclick="switchAdminTab('overview')">
-          <i class="fa-solid fa-chart-pie"></i> Tổng quan
-        </button>
-        <button class="tab-btn" onclick="switchAdminTab('create')">
-          <i class="fa-solid fa-plus-circle"></i> Tạo Key Mới
-        </button>
-        <button class="tab-btn" onclick="switchAdminTab('manage')">
-          <i class="fa-solid fa-list-check"></i> Danh sách Key
-        </button>
-        <button class="tab-btn" onclick="switchAdminTab('source')">
-          <i class="fa-solid fa-server"></i> Key Nguồn Stream
-        </button>
-        <button class="tab-btn" onclick="switchAdminTab('logs')">
-          <i class="fa-solid fa-clock-rotate-left"></i> Nhật ký
-        </button>
-      </div>
-
-      <!-- Tab 1: Tổng Quan -->
-      <div id="tab-overview" class="tab-pane active">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <span class="stat-num" id="statTotal">0</span>
-            <span class="stat-label">Tổng số Key đã tạo</span>
-          </div>
-          <div class="stat-card green">
-            <span class="stat-num" id="statActive">0</span>
-            <span class="stat-label">Key đang hoạt động</span>
-          </div>
-          <div class="stat-card yellow">
-            <span class="stat-num" id="statExpired">0</span>
-            <span class="stat-label">Key đã hết hạn</span>
-          </div>
-          <div class="stat-card red">
-            <span class="stat-num" id="statRevoked">0</span>
-            <span class="stat-label">Key đã bị khóa</span>
-          </div>
-        </div>
-
-        <div class="source-status-card">
-          <div class="source-info-left">
-            <i class="fa-solid fa-link"></i>
-            <div>
-              <h4>Trạng thái Key Nguồn Hệ Thống:</h4>
-              <p id="sourceStatusText">Đang bảo vệ trong Két mã hóa AES-256</p>
-            </div>
-          </div>
-          <button class="btn-test-source" onclick="switchAdminTab('source')">
-            <i class="fa-solid fa-gear"></i> Cấu hình nguồn
-          </button>
-        </div>
-      </div>
-
-      <!-- Tab 2: Tạo Key Mới -->
-      <div id="tab-create" class="tab-pane">
-        <form id="createKeyForm" onsubmit="handleCreateKeys(event)" class="admin-form">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Số lượng Key muốn tạo:</label>
-              <input type="number" id="createCount" value="1" min="1" max="50" required>
-            </div>
-            <div class="form-group">
-              <label>Thời hạn sử dụng:</label>
-              <select id="createDuration">
-                <option value="7">7 Ngày (Dùng thử)</option>
-                <option value="30" selected>30 Ngày (1 Tháng)</option>
-                <option value="90">90 Ngày (3 Tháng)</option>
-                <option value="180">180 Ngày (6 Tháng)</option>
-                <option value="365">365 Ngày (1 Năm)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Tiền tố Key (Prefix):</label>
-              <input type="text" id="createPrefix" value="NFLX-VIP" placeholder="VD: NFLX-VIP">
-            </div>
-            <div class="form-group">
-              <label>Cơ chế tính hạn:</label>
-              <select id="createActivationType">
-                <option value="true" selected>Tính hạn từ lần đầu khách nhập key</option>
-                <option value="false">Tính hạn ngay từ thời điểm tạo</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group full-width">
-            <label>Tự đặt Mã Key riêng (Tùy chọn - Để trống nếu muốn tự sinh ngẫu nhiên):</label>
-            <input type="text" id="createModalCustomKey" placeholder="VD: BINHLUU-VIP-01, KHACH-VIP-99...">
-          </div>
-
-          <div class="form-group full-width">
-            <label><i class="fa-solid fa-link"></i> Gán thẳng Link Token / Cookie / Acc riêng cho Key này (Tùy chọn):</label>
-            <input type="text" id="createModalCustomAccount" placeholder="Dán link Netflix Token hoặc Acc riêng (để trống nếu dùng chung nguồn Master)">
-            <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">* Nếu nhập mục này, khách dùng Key sẽ vào thẳng tài khoản này thay vì lấy từ nguồn Master chung.</small>
-          </div>
-
-          <div class="form-group full-width">
-            <label>Ghi chú (Tên khách hàng / Đơn hàng):</label>
-            <input type="text" id="createNote" placeholder="VD: Bán cho khách Nguyen Van A qua Zalo">
-          </div>
-          <button type="submit" class="btn-primary-admin">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> LƯU & TẠO KEY NGAY
-          </button>
-        </form>
-
-
-        <!-- Hộp hiển thị kết quả tạo Key -->
-        <div id="createdResultBox" class="created-result-box hidden">
-          <div class="result-header">
-            <h4><i class="fa-solid fa-key"></i> DANH SÁCH KEY VỪA TẠO (CHỈ HIỆN 1 LẦN DUY NHẤT)</h4>
-            <button class="btn-copy-all" onclick="copyCreatedKeys()">
-              <i class="fa-regular fa-copy"></i> Sao chép tất cả
-            </button>
-          </div>
-          <p class="warning-text">⚠️ <strong>Cảnh báo bảo mật:</strong> Để đảm bảo an toàn tuyệt đối, hệ thống chỉ lưu mã băm (Hash) một chiều vào cơ sở dữ liệu. Vui lòng copy và lưu lại các mã Key này ngay!</p>
-          <textarea id="createdKeysOutput" readonly rows="5"></textarea>
-        </div>
-      </div>
-
-      <!-- Tab 3: Quản Lý Key -->
-      <div id="tab-manage" class="tab-pane">
-        <div class="table-toolbar">
-          <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="tableSearch" placeholder="Tìm theo tiền tố hoặc ghi chú..." oninput="filterKeyTable()">
-          </div>
-          <div class="filter-group">
-            <button class="btn-filter active" onclick="setTableFilter('all', this)">Tất cả</button>
-            <button class="btn-filter" onclick="setTableFilter('active', this)">Đang dùng</button>
-            <button class="btn-filter" onclick="setTableFilter('expired', this)">Hết hạn</button>
-            <button class="btn-filter" onclick="setTableFilter('revoked', this)">Đã khóa</button>
-          </div>
-        </div>
-
-        <div class="table-responsive">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Mã Key (Masked)</th>
-                <th>Gói</th>
-                <th>Hạn dùng</th>
-                <th>Trạng thái</th>
-                <th>Lượt dùng</th>
-                <th>Ghi chú</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="keyTableBody">
-              <!-- Sẽ render động bằng JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Tab 4: Cấu Hình Nguồn Stream -->
-      <div id="tab-source" class="tab-pane">
-        <div class="source-config-card">
-          <h3><i class="fa-solid fa-server"></i> THAY NÓNG KEY NGUỒN HỆ THỐNG</h3>
-          <p class="desc">Khi Key nguồn hết hạn hoặc cần đổi mới, bạn chỉ cần dán Key mới vào đây và bấm lưu. Toàn bộ khách hàng sẽ tiếp tục xem được bình thường mà không cần đổi key của họ!</p>
-
-          <!-- Thẻ hiển thị Key nguồn hiện tại đang lưu trong hệ thống -->
-          <div class="current-source-status-box" style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 700; color: #4ade80; letter-spacing: 0.5px;"><i class="fa-solid fa-circle-check"></i> KEY NGUỒN ĐANG HOẠT ĐỘNG:</span>
-              <span id="sourceModalLastUpdated" style="font-size: 11px; color: var(--text-muted);">Vừa cập nhật</span>
-            </div>
-            <div style="font-family: monospace; font-size: 15px; font-weight: 700; color: #ffffff; background: #000; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);" id="currentSavedModalKeyBadge">
-              Đang tải...
-            </div>
-          </div>
-
-          <form id="sourceConfigForm" onsubmit="event.preventDefault(); handleUpdateSource(event);">
-            <div class="form-group">
-              <label>API Endpoint Máy Chủ:</label>
-              <input type="text" id="sourceModalApiUrl" value="https://netflix.lunakey.net/api/get-link" required>
-            </div>
-            <div class="form-group">
-              <label>Dán Key nguồn Stream mới (để cập nhật):</label>
-              <input type="text" id="sourceModalKeyInput" placeholder="Dán key nguồn mới vào đây và bấm lưu..." required autocomplete="off">
-            </div>
-
-            <div class="btn-group">
-              <button type="submit" class="btn-primary-admin">
-                <i class="fa-solid fa-floppy-disk"></i> Lưu & Cập Nhật Nguồn
-              </button>
-              <button type="button" class="btn-test-conn" onclick="testSourceConnection()">
-                <i class="fa-solid fa-bolt"></i> Test Thử Kết Nối
-              </button>
-            </div>
-          </form>
-
-          <div id="sourceTestResult" class="test-result-box hidden"></div>
-        </div>
-      </div>
-
-
-
-            <div class="btn-group">
-              <button type="submit" class="btn-primary-admin">
-                <i class="fa-solid fa-floppy-disk"></i> Lưu & Cập Nhật Nguồn
-              </button>
-              <button type="button" class="btn-test-conn" onclick="testSourceConnection()">
-                <i class="fa-solid fa-bolt"></i> Test Thử Kết Nối
-              </button>
-            </div>
-          </form>
-
-          <div id="sourceTestResult" class="test-result-box hidden"></div>
-        </div>
-      </div>
-
-      <!-- Tab 5: Nhật Ký Hoạt Động -->
-      <div id="tab-logs" class="tab-pane">
-        <div class="logs-list" id="logsList">
-          <!-- Logs render động -->
-        </div>
-      </div>
-
-  <script src="app.js?v=3.0.0"></script>
+  <script src="app.js?v=3.1.0"></script>
 </body>
 </html>
+
 

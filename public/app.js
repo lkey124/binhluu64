@@ -43,10 +43,12 @@ async function handleVerify(event) {
 
     if (data.type === "admin") {
       currentAdminToken = data.token;
+      localStorage.setItem('netflix_admin_token', data.token);
       keyInput.value = "";
-      openAdminModal();
+      window.location.href = "/admin";
       return;
     }
+
 
     showSuccessState(data);
 
