@@ -235,10 +235,49 @@
 
           <div id="convertResultBox" class="created-result-box hidden" style="margin-top: 20px;">
             <div class="result-header">
-              <h4><i class="fa-solid fa-circle-check"></i> KẾT QUẢ LINK ĐĂNG NHẬP NETFLIX</h4>
+              <h4 id="convResultTitle"><i class="fa-solid fa-circle-check"></i> KẾT QUẢ XỬ LÝ</h4>
+            </div>
+
+            <!-- Nếu là Account Email/Pass/PIN -->
+            <div id="convAccountCard" class="luna-creds-card hidden" style="margin-top: 14px;">
+              <div class="creds-header"><i class="fa-solid fa-user-shield"></i> TÀI KHOẢN ĐĂNG NHẬP THỦ CÔNG (EMAIL / PASS / PIN)</div>
+              <div class="creds-grid">
+                <div class="cred-item">
+                  <span class="cred-label">Email Đăng Nhập:</span>
+                  <div class="cred-row">
+                    <input type="text" id="convAccEmail" readonly class="cred-val-input">
+                    <button type="button" class="btn-luna-copy" onclick="copyCred('convAccEmail')">Copy</button>
+                  </div>
+                </div>
+                <div class="cred-item">
+                  <span class="cred-label">Mật khẩu (Password):</span>
+                  <div class="cred-row">
+                    <input type="text" id="convAccPassword" readonly class="cred-val-input">
+                    <button type="button" class="btn-luna-copy" onclick="copyCred('convAccPassword')">Copy</button>
+                  </div>
+                </div>
+                <div class="cred-item">
+                  <span class="cred-label">Hồ sơ (Profile):</span>
+                  <div class="cred-row">
+                    <input type="text" id="convAccProfile" readonly class="cred-val-input">
+                    <button type="button" class="btn-luna-copy" onclick="copyCred('convAccProfile')">Copy</button>
+                  </div>
+                </div>
+                <div class="cred-item">
+                  <span class="cred-label">Mã PIN Hồ Sơ:</span>
+                  <div class="cred-row">
+                    <input type="text" id="convAccPin" readonly class="cred-val-input">
+                    <button type="button" class="btn-luna-copy" onclick="copyCred('convAccPin')">Copy</button>
+                  </div>
+                </div>
+              </div>
+              <a href="https://www.netflix.com/login" target="_blank" class="btn-open-netflix-login">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở Trang Đăng Nhập Netflix.com
+              </a>
             </div>
             
-            <div class="luna-platform-list" style="margin-top: 14px;">
+            <!-- Nếu là Link nftoken tự động -->
+            <div id="convPlatformList" class="luna-platform-list" style="margin-top: 14px;">
               <div class="luna-platform-card">
                 <div class="platform-header"><i class="fa-solid fa-laptop"></i> LINK XEM TRÊN PC / LAPTOP</div>
                 <div class="platform-action-row">
@@ -267,6 +306,7 @@
               </div>
             </div>
           </div>
+
 
           <!-- Kho Lưu Trữ Link & Tài Khoản Đã Tạo -->
           <div style="margin-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 20px;">

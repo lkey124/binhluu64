@@ -244,22 +244,52 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
   }
 
   const cleanInput = input.trim();
+  let isCredentials = false;
+  let email = '';
+  let password = '';
+  let profile = '';
+  let pin = '';
   let nftoken = '';
+  let pcUrl = '';
+  let mobileUrl = '';
+  let tvUrl = '';
 
-  // 1. Trường hợp input là URL hoặc chứa nftoken
-  if (cleanInput.includes('nftoken=')) {
+  // 1. Trường hợp là tài khoản dạng Email | Password | Profile | PIN
+  if (cleanInput.includes('|')) {
+    isCredentials = true;
+    const parts = cleanInput.split('|').map(s => s.trim());
+    email = parts[0] || '';
+    password = parts[1] || '';
+    profile = parts[2] || '';
+    pin = parts[3] || '';
+
+    pcUrl = 'https://www.netflix.com/login';
+    mobileUrl = 'https://www.netflix.com/login';
+    tvUrl = 'https://www.netflix.com/tv2';
+  } 
+  // 2. Trường hợp input là URL hoặc chứa nftoken
+  else if (cleanInput.includes('nftoken=')) {
     nftoken = cleanInput.split('nftoken=')[1].split('&')[0];
+    pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
+    mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
+    tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
   } else if (cleanInput.includes('token=')) {
     nftoken = cleanInput.split('token=')[1].split('&')[0];
+    pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
+    mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
+    tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
   } 
-  // 2. Trường hợp là Cookie Netflix
+  // 3. Trường hợp là Cookie Netflix
   else if (cleanInput.includes('NetflixId=') || cleanInput.includes('SecureNetflixId=')) {
     const netflixIdMatch = cleanInput.match(/NetflixId=([^;]+)/);
     const secureMatch = cleanInput.match(/SecureNetflixId=([^;]+)/);
     const rawToken = (netflixIdMatch ? netflixIdMatch[1] : '') + (secureMatch ? secureMatch[1] : '');
     nftoken = encodeURIComponent(rawToken || cleanInput);
+    pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
+    mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
+    tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
   }
-  // 3. Trường hợp là mã Code / Key nguồn
+  // 4. Trường hợp là mã Code / Key nguồn: Gọi relay để lấy link thật
   else if (/^[A-Za-z0-9_-]{4,32}$/.test(cleanInput)) {
     try {
       const relayRes = await lunakeyService.fetchNetflixDirectLink();
@@ -271,25 +301,13 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
     } catch {
       nftoken = encodeURIComponent(cleanInput);
     }
+    pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
+    mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
+    tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
   } else {
-    nftoken = encodeURIComponent(cleanInput);
-  }
-
-  const pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
-  const mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
-  const tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
-
-  let email = '';
-  let password = '';
-  let profile = '';
-  let pin = '';
-
-  if (cleanInput.includes('|')) {
-    const parts = cleanInput.split('|').map(s => s.trim());
-    email = parts[0] || '';
-    password = parts[1] || '';
-    profile = parts[2] || '';
-    pin = parts[3] || '';
+    pcUrl = 'https://www.netflix.com/login';
+    mobileUrl = 'https://www.netflix.com/login';
+    tvUrl = 'https://www.netflix.com/tv2';
   }
 
   // Tự động lưu trữ vĩnh viễn vào Kho Lưu Trữ Tài Khoản / Link của Admin
@@ -307,14 +325,24 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
 
   return res.json({
     success: true,
+    isCredentials: isCredentials,
+    account: {
+      email,
+      password,
+      profile,
+      pin
+    },
     nftoken: nftoken,
     pcUrl: pcUrl,
     mobileUrl: mobileUrl,
     tvUrl: tvUrl,
     savedRecord: savedRecord,
-    message: 'Đã tạo và tự động lưu vào Kho Link & Tài Khoản thành công!'
+    message: isCredentials 
+      ? 'Đã bóc tách thành công tài khoản Email / Pass / PIN và lưu vào Kho!' 
+      : 'Đã tạo link Netflix tự động và lưu vào Kho thành công!'
   });
 });
+
 
 // Xóa tài khoản / link đã lưu khỏi Kho Lưu Trữ
 router.delete('/admin/delete-saved-account', authenticateAdmin, (req, res) => {
