@@ -507,42 +507,24 @@ async function handleConvertAccount(event) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
 
-    const titleElem = document.getElementById("convResultTitle");
-    const accountCard = document.getElementById("convAccountCard");
-    const platformList = document.getElementById("convPlatformList");
+    document.getElementById("convPcUrl").value = data.pcUrl;
+    document.getElementById("convBtnPc").href = data.pcUrl;
 
-    if (data.isCredentials) {
-      if (titleElem) titleElem.innerHTML = "<i class='fa-solid fa-user-check'></i> THÔNG TIN TÀI KHOẢN ĐĂNG NHẬP (EMAIL / PASS / PIN)";
-      if (accountCard) accountCard.classList.remove("hidden");
-      if (platformList) platformList.classList.add("hidden");
+    document.getElementById("convMobileUrl").value = data.mobileUrl;
+    document.getElementById("convBtnMobile").href = data.mobileUrl;
 
-      document.getElementById("convAccEmail").value = data.account.email || "—";
-      document.getElementById("convAccPassword").value = data.account.password || "—";
-      document.getElementById("convAccProfile").value = data.account.profile || "Hồ sơ cá nhân";
-      document.getElementById("convAccPin").value = data.account.pin || "Không có PIN";
-    } else {
-      if (titleElem) titleElem.innerHTML = "<i class='fa-solid fa-circle-check'></i> BỘ 3 LINK ĐĂNG NHẬP TỰ ĐỘNG (PC / MOBILE / TV)";
-      if (accountCard) accountCard.classList.add("hidden");
-      if (platformList) platformList.classList.remove("hidden");
-
-      document.getElementById("convPcUrl").value = data.pcUrl;
-      document.getElementById("convBtnPc").href = data.pcUrl;
-
-      document.getElementById("convMobileUrl").value = data.mobileUrl;
-      document.getElementById("convBtnMobile").href = data.mobileUrl;
-
-      document.getElementById("convTvUrl").value = data.tvUrl;
-      document.getElementById("convBtnTv").href = data.tvUrl;
-    }
+    document.getElementById("convTvUrl").value = data.tvUrl;
+    document.getElementById("convBtnTv").href = data.tvUrl;
 
     document.getElementById("convertResultBox").classList.remove("hidden");
     loadAdminOverview();
-    alert("✅ " + data.message);
+    alert("✅ Đã sinh bộ 3 link đăng nhập tự động thành công!");
 
   } catch (err) {
     alert("Lỗi chuyển đổi: " + err.message);
   }
 }
+
 
 
 function renderSavedAccounts(accounts) {
