@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const db = require('../models/db');
 const lunakeyService = require('../services/lunakeyService');
+const netflixAuthService = require('../services/netflixAuthService');
 const crypto = require('crypto');
+
 
 const { generateAdminToken, verifyAdminToken, keyVerificationLimiter, applySecurityDelay } = require('../config/security');
 
@@ -312,23 +314,38 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
     profile = parts[2] || '';
     pin = parts[3] || '';
 
-    // Cố gắng cấp nftoken từ luồng stream hiện tại để tạo bộ link xem ngay
+    // Bước 1: Thử trích xuất nftoken trực tiếp từ Netflix qua Auth Service
     try {
-      const relayRes = await lunakeyService.fetchNetflixDirectLink();
-      if (relayRes && relayRes.directUrl && relayRes.directUrl.includes('nftoken=')) {
-        nftoken = relayRes.directUrl.split('nftoken=')[1].split('&')[0];
+      const authRes = await netflixAuthService.loginAndExtractNftoken(email, password);
+      if (authRes && authRes.nftoken) {
+        nftoken = authRes.nftoken;
+        pcUrl = authRes.pcUrl;
+        mobileUrl = authRes.mobileUrl;
+        tvUrl = authRes.tvUrl;
+      }
+    } catch (directErr) {
+      console.log('Direct Netflix Auth không lấy được nftoken, chuyển sang Relay Stream:', directErr.message);
+    }
+
+    // Bước 2: Nếu chưa có nftoken, cấp từ Luồng Stream hiện tại của máy chủ
+    if (!nftoken) {
+      try {
+        const relayRes = await lunakeyService.fetchNetflixDirectLink();
+        if (relayRes && relayRes.directUrl && relayRes.directUrl.includes('nftoken=')) {
+          nftoken = relayRes.directUrl.split('nftoken=')[1].split('&')[0];
+          pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
+          mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
+          tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
+        }
+      } catch {
+        nftoken = 'STREAM_' + Date.now();
         pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
         mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
         tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
       }
-    } catch {
-      // Fallback nếu chưa kết nối nguồn
-      nftoken = 'STREAM_' + Date.now();
-      pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
-      mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
-      tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
     }
   } 
+
   // 2. Trường hợp input là URL hoặc chứa nftoken
   else if (cleanInput.includes('nftoken=')) {
     nftoken = cleanInput.split('nftoken=')[1].split('&')[0];
