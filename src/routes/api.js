@@ -263,10 +263,23 @@ router.delete('/admin/delete-key', authenticateAdmin, (req, res) => {
   const { keyId } = req.body;
   const deleted = db.deleteKey(keyId);
   if (!deleted) {
-    return res.status(404).json({ success: false, error: 'Không tìm thấy Key để xóa!' });
+    return res.status(404).json({ success: false, error: 'Không tìm thấy Key cần xóa!' });
   }
-  res.json({ success: true, message: 'Đã xóa Key khỏi hệ thống!' });
+  res.json({ success: true, message: 'Đã xóa Key thành công!' });
 });
+
+// Tự động quét và xóa sạch toàn bộ Key đã hết hạn
+router.post('/admin/purge-expired', authenticateAdmin, (req, res) => {
+  const deletedCount = db.purgeExpiredKeys();
+  res.json({
+    success: true,
+    deletedCount: deletedCount,
+    message: deletedCount > 0 
+      ? `Đã tự động xóa sạch ${deletedCount} Key hết hạn khỏi hệ thống!`
+      : 'Không có Key nào bị hết hạn cần dọn dẹp!'
+  });
+});
+
 
 // Chuyển đổi Acc / Cookie / Code thành link nftoken Netflix
 router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {

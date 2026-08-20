@@ -27,8 +27,16 @@ class DatabaseManager {
   constructor() {
     this.data = this.loadData();
     // Tự động kéo dữ liệu từ Cloud Database khi khởi động nếu có cấu hình
-    this.syncFromCloud();
+    this.syncFromCloud().then(() => {
+      this.purgeExpiredKeys();
+    });
+
+    // Tự động quét và dọn dẹp sạch sẽ Key hết hạn mỗi 30 phút
+    setInterval(() => {
+      this.purgeExpiredKeys();
+    }, 30 * 60 * 1000);
   }
+
 
   loadData() {
     try {
@@ -319,8 +327,27 @@ class DatabaseManager {
   }
 
 
+  purgeExpiredKeys() {
+    this.loadData();
+    const now = new Date();
+    const beforeCount = this.data.clientKeys.length;
+    this.data.clientKeys = this.data.clientKeys.filter(k => {
+      if (k.expiresAt && new Date(k.expiresAt) < now) {
+        return false; // Tự động xóa vĩnh viễn key đã hết hạn
+      }
+      return true;
+    });
+    const deletedCount = beforeCount - this.data.clientKeys.length;
+    if (deletedCount > 0) {
+      this.saveData();
+      console.log(`🧹 [AUTO-PURGE] Đã tự động dọn dẹp và xóa ${deletedCount} Key hết hạn khỏi Database!`);
+    }
+    return deletedCount;
+  }
+
   // --- ADMIN MANAGEMENT ACTIONS ---
   getAllKeysForAdmin() {
+    this.purgeExpiredKeys(); // Tự động dọn dẹp mỗi khi truy xuất danh sách
     const now = new Date();
     return this.data.clientKeys.map(k => {
       let isExpired = false;
@@ -348,7 +375,6 @@ class DatabaseManager {
         lastUsedAt: k.lastUsedAt,
         note: k.note
       };
-
     });
   }
 
@@ -372,6 +398,7 @@ class DatabaseManager {
     this.saveData();
     return key;
   }
+
 
   deleteKey(keyId) {
     const index = this.data.clientKeys.findIndex(k => k.id === keyId);

@@ -716,6 +716,22 @@ async function handleRestoreVaultFile(event) {
   }
 }
 
-
-
+async function handlePurgeExpiredKeys() {
+  if (!confirm("Bạn có chắc chắn muốn dọn dẹp và xóa sạch toàn bộ các Key đã hết hạn khỏi hệ thống?")) return;
+  try {
+    const res = await fetch("/api/admin/purge-expired", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + currentAdminToken
+      }
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    alert(data.message);
+    loadAdminOverview();
+  } catch (err) {
+    alert("Lỗi dọn dẹp: " + err.message);
+  }
+}
 

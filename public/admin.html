@@ -251,8 +251,12 @@
             <button class="btn-filter" onclick="setTableFilter('active', this)">Đang dùng</button>
             <button class="btn-filter" onclick="setTableFilter('expired', this)">Hết hạn</button>
             <button class="btn-filter" onclick="setTableFilter('revoked', this)">Đã khóa</button>
+            <button type="button" class="btn-secondary" onclick="handlePurgeExpiredKeys()" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; font-weight: 700; padding: 6px 12px; font-size: 11px; margin-left: 8px; border-radius: 6px; cursor: pointer;">
+              <i class="fa-solid fa-broom"></i> Dọn Sạch Key Hết Hạn
+            </button>
           </div>
         </div>
+
 
         <div class="table-responsive">
           <table class="admin-table">
