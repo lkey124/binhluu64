@@ -355,13 +355,14 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
           tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
         }
       } catch {
-        nftoken = 'STREAM_' + Date.now();
-        pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
-        mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
-        tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
+        nftoken = null;
+        pcUrl = 'https://www.netflix.com/browse';
+        mobileUrl = 'https://www.netflix.com/unsupported';
+        tvUrl = 'https://www.netflix.com/tv2';
       }
     }
   } 
+
 
 
   // 2. Trường hợp input là URL hoặc chứa nftoken

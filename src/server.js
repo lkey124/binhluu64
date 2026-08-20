@@ -51,17 +51,8 @@ app.get(['/health', '/api/health'], (req, res) => {
 // 7. Gắn API Routes
 app.use('/api', apiRoutes);
 
-// 8. Khởi tạo dữ liệu mẫu nếu cần
-const existingKeys = db.getAllKeysForAdmin();
-if (existingKeys.length === 0) {
-  const sample = db.createClientKey({
-    durationDays: 30,
-    note: 'Key trải nghiệm thử nghiệm ban đầu (30 ngày)',
-    activateOnFirstUse: true,
-    customKeyPrefix: 'NFLX-VIP'
-  });
-  console.log('⚡ Key mẫu ban đầu:', sample.rawKey);
-}
+// 8. Xử lý lỗi toàn cục (Sanitized Error Handler - Không lộ Stacktrace)
+
 
 // 9. Xử lý lỗi toàn cục (Sanitized Error Handler - Không lộ Stacktrace)
 app.use((err, req, res, next) => {

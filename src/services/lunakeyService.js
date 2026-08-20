@@ -10,22 +10,9 @@ class LunakeyRelayService {
     const sourceKey = (sourceConfig.sourceKey || '').trim();
 
     if (!sourceKey) {
-      throw new Error('Key nguồn máy chủ chưa được cấu hình. Vui lòng vào Admin để cập nhật!');
+      throw new Error('Key nguồn máy chủ chưa được cấu hình. Vui lòng vào Admin để cập nhật Key nguồn!');
     }
 
-    // Nếu là key mẫu / demo test
-    if (sourceKey.startsWith('demo_') || sourceKey.includes('default') || sourceKey === 'LUNA_TEST_SAVE_KEY_9999' || sourceKey.startsWith('demo')) {
-      return {
-        success: true,
-        directUrl: 'https://www.netflix.com/browse?nftoken=BgAAAW09e99QZ8291038194829104810238',
-        plan: 'Cao cấp',
-        country: 'KW',
-        streams: '4',
-        currentId: 'ABC #' + Math.floor(1000 + Math.random() * 9000),
-        isDemo: true,
-        message: 'Đang dùng Key Demo thử nghiệm.'
-      };
-    }
 
     try {
       // 1. Bước 1: GET trang nguồn để lấy Session Cookie & CSRF Token
@@ -175,18 +162,9 @@ class LunakeyRelayService {
    * Sinh link trực tiếp với bất kỳ Key/Code nào
    */
   async fetchNetflixDirectLinkWithKey(customKey) {
-
     const key = (customKey || '').trim();
     if (!key) throw new Error('Chưa nhập Key để sinh link!');
 
-    if (key.startsWith('demo_') || key.includes('default') || key === 'LUNA_TEST_SAVE_KEY_9999') {
-      return {
-        success: true,
-        directUrl: 'https://www.netflix.com/browse?nftoken=BgAAAW09e99QZ8291038194829104810238',
-        nftoken: 'BgAAAW09e99QZ8291038194829104810238',
-        isDemo: true
-      };
-    }
 
     const getRes = await axios.get('https://netflix.lunakey.net/', {
       headers: {
