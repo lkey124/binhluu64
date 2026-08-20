@@ -90,6 +90,51 @@ function showSuccessState(data) {
 
   const randomId = "ABC #" + Math.floor(1000 + Math.random() * 9000);
   document.getElementById("lunaCurrentId").innerText = randomId;
+
+  // Hiển thị thông tin tài khoản nếu có
+  if (data.accountDetails) {
+    document.getElementById("credEmail").value = data.accountDetails.email || "—";
+    document.getElementById("credPassword").value = data.accountDetails.password || "—";
+    document.getElementById("credProfile").value = data.accountDetails.profile || "Hồ sơ cá nhân";
+    document.getElementById("credPin").value = data.accountDetails.pin || "Không có PIN";
+    // Tự động mở tab Tài Khoản nếu là tài khoản Email/Pass
+    if (data.accountDetails.email) {
+      switchLoginMode("account");
+    }
+  } else {
+    document.getElementById("credEmail").value = "Chưa cấu hình tài khoản dự phòng";
+    document.getElementById("credPassword").value = "••••••••";
+    document.getElementById("credProfile").value = "Hồ sơ chính";
+    document.getElementById("credPin").value = "—";
+    switchLoginMode("link");
+  }
+}
+
+function switchLoginMode(mode) {
+  const btnLink = document.getElementById("btnModeLink");
+  const btnAcc = document.getElementById("btnModeAcc");
+  const platformList = document.getElementById("lunaPlatformList");
+  const credsBox = document.getElementById("accountCredsBox");
+
+  if (mode === "link") {
+    if (btnLink) btnLink.classList.add("active");
+    if (btnAcc) btnAcc.classList.remove("active");
+    if (platformList) platformList.classList.remove("hidden");
+    if (credsBox) credsBox.classList.add("hidden");
+  } else {
+    if (btnAcc) btnAcc.classList.add("active");
+    if (btnLink) btnLink.classList.remove("active");
+    if (platformList) platformList.classList.add("hidden");
+    if (credsBox) credsBox.classList.remove("hidden");
+  }
+}
+
+function copyCred(id) {
+  const input = document.getElementById(id);
+  if (!input) return;
+  input.select();
+  navigator.clipboard.writeText(input.value);
+  alert("Đã sao chép: " + input.value);
 }
 
 function copyPlatformUrl(inputId) {
@@ -113,6 +158,7 @@ function resetKeyForm() {
   document.getElementById("keyInput").value = "";
   document.getElementById("alertBox").classList.add("hidden");
 }
+
 
 
 function openAdminModal() {

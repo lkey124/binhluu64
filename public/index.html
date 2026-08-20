@@ -107,8 +107,59 @@
           </button>
         </div>
 
-        <!-- 3 Nền tảng thiết bị: PC, Mobile, TV -->
-        <div class="luna-platform-list">
+        <!-- Chuyển đổi linh hoạt giữa Link tự động & Tài khoản Email/Pass -->
+        <div class="mode-switch-wrapper">
+          <button type="button" id="btnModeLink" class="btn-mode-tab active" onclick="switchLoginMode('link')">
+            <i class="fa-solid fa-bolt"></i> Link Tự Động (PC/Mobile/TV)
+          </button>
+          <button type="button" id="btnModeAcc" class="btn-mode-tab" onclick="switchLoginMode('account')">
+            <i class="fa-solid fa-key"></i> Đăng Nhập Email / Pass / PIN
+          </button>
+        </div>
+
+        <!-- Hộp Thông Tin Tài Khoản Thủ Công (Email / Pass / Profile / PIN) -->
+        <div id="accountCredsBox" class="luna-creds-card hidden">
+          <div class="creds-header">
+            <i class="fa-solid fa-user-shield"></i> THÔNG TIN TÀI KHOẢN ĐĂNG NHẬP
+          </div>
+          <div class="creds-grid">
+            <div class="cred-item">
+              <span class="cred-label"><i class="fa-regular fa-envelope"></i> Email Đăng Nhập:</span>
+              <div class="cred-row">
+                <input type="text" id="credEmail" readonly class="cred-val-input" value="Đang tải...">
+                <button type="button" class="btn-luna-copy" onclick="copyCred('credEmail')">Copy</button>
+              </div>
+            </div>
+            <div class="cred-item">
+              <span class="cred-label"><i class="fa-solid fa-lock"></i> Mật Khẩu (Password):</span>
+              <div class="cred-row">
+                <input type="text" id="credPassword" readonly class="cred-val-input" value="Đang tải...">
+                <button type="button" class="btn-luna-copy" onclick="copyCred('credPassword')">Copy</button>
+              </div>
+            </div>
+            <div class="cred-item">
+              <span class="cred-label"><i class="fa-solid fa-user"></i> Hồ Sơ (Profile):</span>
+              <div class="cred-row">
+                <input type="text" id="credProfile" readonly class="cred-val-input" value="Chính chủ">
+                <button type="button" class="btn-luna-copy" onclick="copyCred('credProfile')">Copy</button>
+              </div>
+            </div>
+            <div class="cred-item">
+              <span class="cred-label"><i class="fa-solid fa-hashtag"></i> Mã PIN Hồ Sơ:</span>
+              <div class="cred-row">
+                <input type="text" id="credPin" readonly class="cred-val-input" value="Không có PIN">
+                <button type="button" class="btn-luna-copy" onclick="copyCred('credPin')">Copy</button>
+              </div>
+            </div>
+          </div>
+          <a href="https://www.netflix.com/login" target="_blank" rel="noopener noreferrer" class="btn-open-netflix-login">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở Trang Đăng Nhập Netflix.com
+          </a>
+        </div>
+
+        <!-- 3 Nền tảng thiết bị: PC, Mobile, TV (Mặc định hiện) -->
+        <div id="lunaPlatformList" class="luna-platform-list">
+
           <!-- PC -->
           <div class="luna-platform-card">
             <div class="platform-header">

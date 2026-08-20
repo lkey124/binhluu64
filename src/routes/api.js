@@ -77,14 +77,31 @@ router.post('/verify', keyVerificationLimiter, async (req, res) => {
   // C. Lấy luồng xem Netflix
   // 1. Nếu Key được Admin gán Acc / Token riêng trực tiếp:
   if (validation.customAccount) {
-    let directUrl = validation.customAccount;
-    if (!directUrl.startsWith('http://') && !directUrl.startsWith('https://')) {
-      directUrl = 'https://www.netflix.com/browse?nftoken=' + encodeURIComponent(directUrl);
+    let rawAcc = validation.customAccount;
+    let accountDetails = null;
+    let directUrl = '';
+
+    if (rawAcc.includes('|')) {
+      const parts = rawAcc.split('|').map(s => s.trim());
+      accountDetails = {
+        email: parts[0] || '',
+        password: parts[1] || '',
+        profile: parts[2] || 'Hồ sơ cá nhân',
+        pin: parts[3] || 'Không có PIN'
+      };
+      directUrl = 'https://www.netflix.com/login';
+    } else {
+      directUrl = rawAcc;
+      if (!directUrl.startsWith('http://') && !directUrl.startsWith('https://')) {
+        directUrl = 'https://www.netflix.com/browse?nftoken=' + encodeURIComponent(directUrl);
+      }
     }
+
     return res.json({
       success: true,
       type: 'user',
       directUrl: directUrl,
+      accountDetails: accountDetails,
       isDemo: false,
       expiresAt: validation.expiresAt,
       daysRemaining: validation.daysRemaining,
@@ -100,6 +117,7 @@ router.post('/verify', keyVerificationLimiter, async (req, res) => {
       success: true,
       type: 'user',
       directUrl: streamResult.directUrl,
+      accountDetails: null,
       isDemo: streamResult.isDemo,
       expiresAt: validation.expiresAt,
       daysRemaining: validation.daysRemaining,
@@ -113,6 +131,7 @@ router.post('/verify', keyVerificationLimiter, async (req, res) => {
     });
   }
 });
+
 
 
 

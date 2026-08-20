@@ -1020,3 +1020,118 @@ body {
 .btn-luna-back:hover {
   color: #ffffff;
 }
+
+/* Chuyển đổi Mode: Link vs Acc Email/Pass */
+.mode-switch-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: #090a10;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-mode-tab {
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btn-mode-tab.active {
+  background: #1e2438;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Thẻ hiển thị thông tin tài khoản Email / Pass / Profile / PIN */
+.luna-creds-card {
+  background: #111420;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid #38bdf8;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: fadeIn 0.2s ease;
+}
+
+.creds-header {
+  font-size: 13px;
+  font-weight: 800;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.5px;
+}
+
+.creds-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.cred-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cred-label {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.cred-row {
+  display: flex;
+  gap: 8px;
+}
+
+.cred-val-input {
+  flex: 1;
+  background: #090a10;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 13px;
+  font-family: monospace;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 8px;
+  outline: none;
+}
+
+.btn-open-netflix-login {
+  background: var(--netflix-red);
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px var(--netflix-red-glow);
+}
+
+.btn-open-netflix-login:hover {
+  background: var(--netflix-red-hover);
+  transform: translateY(-1px);
+}
