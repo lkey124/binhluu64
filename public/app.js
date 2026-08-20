@@ -211,8 +211,10 @@ function renderKeyTable(keys) {
       expireText = expDate.getDate() + "/" + (expDate.getMonth()+1) + "/" + expDate.getFullYear() + " (" + k.daysRemaining + " ngày)";
     }
 
+    let customBadge = k.hasCustomAccount ? " <span style='font-size: 10px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-weight: 700;'><i class='fa-solid fa-star'></i> Acc riêng</span>" : "";
+
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td><strong>" + k.displayPrefix + "</strong></td>" +
+    tr.innerHTML = "<td><strong>" + k.displayPrefix + "</strong>" + customBadge + "</td>" +
       "<td>" + k.durationDays + " ngày</td>" +
       "<td>" + expireText + "</td>" +
       "<td>" + statusBadge + "</td>" +
@@ -259,6 +261,12 @@ async function handleCreateKeys(event) {
   const activateOnFirstUse = document.getElementById("createActivationType").value === "true";
   const note = document.getElementById("createNote").value;
 
+  const customKeyInput = document.getElementById("createCustomKey") || document.getElementById("createModalCustomKey");
+  const customAccountInput = document.getElementById("createCustomAccount") || document.getElementById("createModalCustomAccount");
+
+  const customRawKey = customKeyInput ? customKeyInput.value.trim() : "";
+  const customAccount = customAccountInput ? customAccountInput.value.trim() : "";
+
   try {
     const res = await fetch("/api/admin/create-keys", {
       method: "POST",
@@ -266,7 +274,7 @@ async function handleCreateKeys(event) {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + currentAdminToken
       },
-      body: JSON.stringify({ count, durationDays, customKeyPrefix, activateOnFirstUse, note })
+      body: JSON.stringify({ count, durationDays, customKeyPrefix, activateOnFirstUse, note, customRawKey, customAccount })
     });
 
     const data = await res.json();
@@ -277,6 +285,9 @@ async function handleCreateKeys(event) {
     document.getElementById("createdKeysOutput").value = rawKeysText;
     document.getElementById("createdResultBox").classList.remove("hidden");
 
+    if (customKeyInput) customKeyInput.value = "";
+    if (customAccountInput) customAccountInput.value = "";
+
     loadAdminOverview();
     alert(data.message);
 
@@ -284,6 +295,7 @@ async function handleCreateKeys(event) {
     alert("Lỗi tạo Key: " + err.message);
   }
 }
+
 
 function copyCreatedKeys() {
   const textarea = document.getElementById("createdKeysOutput");

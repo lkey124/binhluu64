@@ -74,8 +74,25 @@ router.post('/verify', keyVerificationLimiter, async (req, res) => {
     });
   }
 
+  // C. Lấy luồng xem Netflix
+  // 1. Nếu Key được Admin gán Acc / Token riêng trực tiếp:
+  if (validation.customAccount) {
+    let directUrl = validation.customAccount;
+    if (!directUrl.startsWith('http://') && !directUrl.startsWith('https://')) {
+      directUrl = 'https://www.netflix.com/browse?nftoken=' + encodeURIComponent(directUrl);
+    }
+    return res.json({
+      success: true,
+      type: 'user',
+      directUrl: directUrl,
+      isDemo: false,
+      expiresAt: validation.expiresAt,
+      daysRemaining: validation.daysRemaining,
+      message: 'Xác thực thành công! Sẵn sàng vào Netflix.'
+    });
+  }
 
-  // C. Lấy luồng xem Netflix từ Lunakey Relay ngầm
+  // 2. Nếu không có gán riêng, tự động lấy luồng từ Két nguồn chung:
   try {
     const streamResult = await lunakeyService.fetchNetflixDirectLink();
     
@@ -96,6 +113,7 @@ router.post('/verify', keyVerificationLimiter, async (req, res) => {
     });
   }
 });
+
 
 
 
@@ -133,9 +151,9 @@ router.get('/admin/overview', authenticateAdmin, (req, res) => {
 
 // Tạo Key mới cho khách hàng (Zero-Knowledge)
 router.post('/admin/create-keys', authenticateAdmin, (req, res) => {
-  const { count = 1, durationDays = 30, note = '', activateOnFirstUse = true, customKeyPrefix = 'NFLX' } = req.body;
+  const { count = 1, durationDays = 30, note = '', activateOnFirstUse = true, customKeyPrefix = 'NFLX', customRawKey = '', customAccount = '' } = req.body;
 
-  const totalToCreate = Math.min(Math.max(parseInt(count) || 1, 1), 50); // Tối đa 50 key/lần
+  const totalToCreate = customRawKey ? 1 : Math.min(Math.max(parseInt(count) || 1, 1), 50); // Tối đa 50 key/lần
   const createdList = [];
 
   for (let i = 0; i < totalToCreate; i++) {
@@ -143,12 +161,15 @@ router.post('/admin/create-keys', authenticateAdmin, (req, res) => {
       durationDays: parseInt(durationDays) || 30,
       note,
       activateOnFirstUse: !!activateOnFirstUse,
-      customKeyPrefix
+      customKeyPrefix,
+      customRawKey: totalToCreate === 1 ? customRawKey : '',
+      customAccount
     });
     createdList.push({
       rawKey: result.rawKey,
       durationDays: result.keyRecord.durationDays,
       note: result.keyRecord.note,
+      hasCustomAccount: !!result.keyRecord.encryptedAccount,
       createdAt: result.keyRecord.createdAt
     });
   }
@@ -159,6 +180,7 @@ router.post('/admin/create-keys', authenticateAdmin, (req, res) => {
     createdKeys: createdList
   });
 });
+
 
 // Bật / Tắt trạng thái khóa của Key
 router.post('/admin/toggle-key', authenticateAdmin, (req, res) => {

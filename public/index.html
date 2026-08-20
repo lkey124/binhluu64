@@ -308,13 +308,25 @@
             </div>
           </div>
           <div class="form-group full-width">
+            <label>Tự đặt Mã Key riêng (Tùy chọn - Để trống nếu muốn tự sinh ngẫu nhiên):</label>
+            <input type="text" id="createModalCustomKey" placeholder="VD: BINHLUU-VIP-01, KHACH-VIP-99...">
+          </div>
+
+          <div class="form-group full-width">
+            <label><i class="fa-solid fa-link"></i> Gán thẳng Link Token / Cookie / Acc riêng cho Key này (Tùy chọn):</label>
+            <input type="text" id="createModalCustomAccount" placeholder="Dán link Netflix Token hoặc Acc riêng (để trống nếu dùng chung nguồn Master)">
+            <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">* Nếu nhập mục này, khách dùng Key sẽ vào thẳng tài khoản này thay vì lấy từ nguồn Master chung.</small>
+          </div>
+
+          <div class="form-group full-width">
             <label>Ghi chú (Tên khách hàng / Đơn hàng):</label>
             <input type="text" id="createNote" placeholder="VD: Bán cho khách Nguyen Van A qua Zalo">
           </div>
           <button type="submit" class="btn-primary-admin">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> SINH MÃ KEY NGAY
+            <i class="fa-solid fa-wand-magic-sparkles"></i> LƯU & TẠO KEY NGAY
           </button>
         </form>
+
 
         <!-- Hộp hiển thị kết quả tạo Key -->
         <div id="createdResultBox" class="created-result-box hidden">

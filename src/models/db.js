@@ -77,13 +77,17 @@ class DatabaseManager {
   }
 
   // --- CLIENT KEY CREATION (ZERO-PLAINTEXT) ---
-  createClientKey({ durationDays = 30, note = '', activateOnFirstUse = true, customKeyPrefix = 'NFLX' }) {
-    // Sinh Key ngẫu nhiên an toàn: VD: NFLX-9A7B-4E2C-8819
-    const randomBlock = Math.random().toString(36).substring(2, 6).toUpperCase() + '-' +
-                        Math.random().toString(36).substring(2, 6).toUpperCase() + '-' +
-                        Math.floor(1000 + Math.random() * 9000);
-    const rawKey = customKeyPrefix.trim().toUpperCase() + '-' + randomBlock;
-
+  createClientKey({ durationDays = 30, note = '', activateOnFirstUse = true, customKeyPrefix = 'NFLX', customRawKey = '', customAccount = '' }) {
+    let rawKey = '';
+    if (customRawKey && customRawKey.trim() !== '') {
+      rawKey = customRawKey.trim().toUpperCase();
+    } else {
+      // Sinh Key ngẫu nhiên an toàn: VD: NFLX-9A7B-4E2C-8819
+      const randomBlock = Math.random().toString(36).substring(2, 6).toUpperCase() + '-' +
+                          Math.random().toString(36).substring(2, 6).toUpperCase() + '-' +
+                          Math.floor(1000 + Math.random() * 9000);
+      rawKey = customKeyPrefix.trim().toUpperCase() + '-' + randomBlock;
+    }
 
     // Băm mật mã một chiều - DB không lưu rawKey!
     const { hash, salt } = hashClientKey(rawKey);
@@ -94,11 +98,17 @@ class DatabaseManager {
       expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000).toISOString();
     }
 
+    // Mã hóa thông tin Account/Link riêng nếu có
+    const encryptedAccount = customAccount && customAccount.trim() !== '' 
+      ? encryptText(customAccount.trim()) 
+      : null;
+
     const keyRecord = {
       id: 'key_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      displayPrefix: rawKey.substring(0, 9) + '****', // Chỉ để Admin nhận diện
+      displayPrefix: rawKey.length > 8 ? (rawKey.substring(0, 8) + '****') : (rawKey.substring(0, 4) + '****'),
       keyHash: hash,
       salt: salt,
+      encryptedAccount: encryptedAccount,
       durationDays: parseInt(durationDays),
       activateOnFirstUse: !!activateOnFirstUse,
       createdAt: now.toISOString(),
@@ -127,7 +137,6 @@ class DatabaseManager {
     
     // Tìm trong danh sách hash
     const match = this.data.clientKeys.find(k => verifyClientKeyHash(trimmed, k.keyHash, k.salt));
-
 
     if (!match) {
       this.logAccess(null, clientIp, false, 'Key không tồn tại hoặc sai');
@@ -160,13 +169,18 @@ class DatabaseManager {
 
     this.logAccess(match.id, clientIp, true, 'Kích hoạt / Lấy link thành công');
 
+    // Giải mã Account/Link riêng nếu key này được gán riêng
+    const customAccount = match.encryptedAccount ? decryptText(match.encryptedAccount) : null;
+
     return {
       success: true,
       keyId: match.id,
+      customAccount: customAccount,
       expiresAt: match.expiresAt,
       daysRemaining: match.expiresAt ? Math.max(0, Math.ceil((new Date(match.expiresAt) - now) / (1000 * 60 * 60 * 24))) : match.durationDays
     };
   }
+
 
   // --- ADMIN MANAGEMENT ACTIONS ---
   getAllKeysForAdmin() {
@@ -184,6 +198,7 @@ class DatabaseManager {
       return {
         id: k.id,
         displayPrefix: k.displayPrefix,
+        hasCustomAccount: !!k.encryptedAccount,
         durationDays: k.durationDays,
         activateOnFirstUse: k.activateOnFirstUse,
         createdAt: k.createdAt,
@@ -196,6 +211,7 @@ class DatabaseManager {
         lastUsedAt: k.lastUsedAt,
         note: k.note
       };
+
     });
   }
 
