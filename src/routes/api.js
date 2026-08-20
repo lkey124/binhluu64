@@ -358,16 +358,28 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
     mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
     tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
   } 
-  // 3. Trường hợp là Cookie Netflix
-  else if (cleanInput.includes('NetflixId=') || cleanInput.includes('SecureNetflixId=')) {
-    const netflixIdMatch = cleanInput.match(/NetflixId=([^;]+)/);
-    const secureMatch = cleanInput.match(/SecureNetflixId=([^;]+)/);
-    const rawToken = (netflixIdMatch ? netflixIdMatch[1] : '') + (secureMatch ? secureMatch[1] : '');
-    nftoken = encodeURIComponent(rawToken || cleanInput);
-    pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
-    mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
-    tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
+  // 3. Trường hợp là Cookie Netflix (Dạng chuỗi Header hoặc JSON từ Cookie-Editor)
+  else if (cleanInput.includes('NetflixId') || cleanInput.includes('SecureNetflixId') || cleanInput.startsWith('[')) {
+    try {
+      const cookieRes = await netflixAuthService.extractNftokenFromCookies(cleanInput);
+      nftoken = cookieRes.nftoken;
+      pcUrl = cookieRes.pcUrl;
+      mobileUrl = cookieRes.mobileUrl;
+      tvUrl = cookieRes.tvUrl;
+      email = cookieRes.email;
+      profile = cookieRes.profiles.join(', ');
+    } catch (cookieErr) {
+      console.warn('Lỗi phân tích cookie:', cookieErr.message);
+      const netflixIdMatch = cleanInput.match(/NetflixId=([^;]+)/);
+      const secureMatch = cleanInput.match(/SecureNetflixId=([^;]+)/);
+      const rawToken = (netflixIdMatch ? netflixIdMatch[1] : '') + (secureMatch ? secureMatch[1] : '');
+      nftoken = encodeURIComponent(rawToken || cleanInput);
+      pcUrl = 'https://www.netflix.com/browse?nftoken=' + nftoken;
+      mobileUrl = 'https://www.netflix.com/unsupported?nftoken=' + nftoken;
+      tvUrl = 'https://www.netflix.com/tv2?nftoken=' + nftoken;
+    }
   }
+
   // 4. Trường hợp là mã Code / Key nguồn: Gọi máy chủ nguồn để sinh nftoken chuẩn
   else {
     try {
