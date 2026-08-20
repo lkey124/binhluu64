@@ -387,38 +387,25 @@ router.post('/admin/convert-account', authenticateAdmin, async (req, res) => {
     note: isCredentials ? ('Tài khoản ' + email) : 'Link Token Netflix VIP'
   });
 
-  res.json({
-    success: true,
-    isCredentials,
-    email,
-    profile,
-    pin,
-    nftoken,
-    pcUrl,
-    mobileUrl,
-    tvUrl,
-    note: req.body.note || ''
-  });
-
   return res.json({
+
     success: true,
     isCredentials: isCredentials,
-    account: {
-      email,
-      password,
-      profile,
-      pin
-    },
+    email: email,
+    password: password,
+    profile: profile,
+    pin: pin,
     nftoken: nftoken,
     pcUrl: pcUrl,
     mobileUrl: mobileUrl,
     tvUrl: tvUrl,
     savedRecord: savedRecord,
     message: isCredentials 
-      ? 'Đã bóc tách thành công tài khoản Email / Pass / PIN và lưu vào Kho!' 
+      ? 'Đã phân tích tài khoản Email / Pass / PIN và lưu vào Kho thành công!' 
       : 'Đã tạo link Netflix tự động và lưu vào Kho thành công!'
   });
 });
+
 
 
 // Xóa tài khoản / link đã lưu khỏi Kho Lưu Trữ

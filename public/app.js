@@ -507,6 +507,22 @@ async function handleConvertAccount(event) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
 
+    const accCard = document.getElementById("convAccountCard");
+    if (data.isCredentials) {
+      if (accCard) accCard.classList.remove("hidden");
+      document.getElementById("convAccEmail").innerText = data.email || "-";
+      document.getElementById("convAccPassword").innerText = data.password || "-";
+      document.getElementById("convAccProfile").innerText = data.profile || "Hồ sơ chính";
+      document.getElementById("convAccPin").innerText = data.pin || "Không có PIN";
+      
+      const rawPayload = `${data.email} | ${data.password} | ${data.profile || 'Profile'} | ${data.pin || ''}`;
+      document.getElementById("convBtnCreateKey").onclick = function() {
+        useSavedAccountForNewKey(encodeURIComponent(rawPayload));
+      };
+    } else {
+      if (accCard) accCard.classList.add("hidden");
+    }
+
     document.getElementById("convPcUrl").value = data.pcUrl;
     document.getElementById("convBtnPc").href = data.pcUrl;
 
@@ -518,12 +534,13 @@ async function handleConvertAccount(event) {
 
     document.getElementById("convertResultBox").classList.remove("hidden");
     loadAdminOverview();
-    alert("✅ Đã sinh bộ 3 link đăng nhập tự động thành công!");
+    alert("✅ Đã phân tích tài khoản & lưu trữ vào kho thành công!");
 
   } catch (err) {
     alert("Lỗi chuyển đổi: " + err.message);
   }
 }
+
 
 
 
