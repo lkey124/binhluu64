@@ -61,13 +61,17 @@ async function handleVerify(event) {
 }
 
 function showSuccessState(data) {
-  document.getElementById("keyForm").classList.add("hidden");
+  const keyForm = document.getElementById("keyForm");
+  if (keyForm) keyForm.classList.add("hidden");
+
   const card = document.getElementById("gatewayCard");
   if (card) card.style.maxWidth = "640px";
-  document.getElementById("successCard").classList.remove("hidden");
 
-  let baseTokenUrl = data.directUrl || "https://www.netflix.com/browse?nftoken=BgAAAW09e99QZdemo";
-  let nftoken = "BgAAAW09e99QZ829103819";
+  const successCard = document.getElementById("successCard");
+  if (successCard) successCard.classList.remove("hidden");
+
+  let baseTokenUrl = data.directUrl || "https://www.netflix.com/browse";
+  let nftoken = "";
 
   if (baseTokenUrl.includes("nftoken=")) {
     nftoken = baseTokenUrl.split("nftoken=")[1].split("&")[0];
@@ -75,40 +79,64 @@ function showSuccessState(data) {
     nftoken = baseTokenUrl.split("token=")[1].split("&")[0];
   }
 
-  const pcUrl = "https://www.netflix.com/browse?nftoken=" + nftoken;
-  const mobileUrl = "https://www.netflix.com/unsupported?nftoken=" + nftoken;
-  const tvUrl = "https://www.netflix.com/tv2?nftoken=" + nftoken;
+  const pcUrl = nftoken ? ("https://www.netflix.com/browse?nftoken=" + nftoken) : baseTokenUrl;
+  const mobileUrl = nftoken ? ("https://www.netflix.com/unsupported?nftoken=" + nftoken) : "https://www.netflix.com/unsupported";
+  const tvUrl = nftoken ? ("https://www.netflix.com/tv2?nftoken=" + nftoken) : "https://www.netflix.com/tv2";
 
-  document.getElementById("pcUrlInput").value = pcUrl;
-  document.getElementById("btnOpenPc").href = pcUrl;
+  const pcInput = document.getElementById("pcUrlInput");
+  if (pcInput) pcInput.value = pcUrl;
+  const btnPc = document.getElementById("btnOpenPc");
+  if (btnPc) btnPc.href = pcUrl;
 
-  document.getElementById("mobileUrlInput").value = mobileUrl;
-  document.getElementById("btnOpenMobile").href = mobileUrl;
+  const mobileInput = document.getElementById("mobileUrlInput");
+  if (mobileInput) mobileInput.value = mobileUrl;
+  const btnMobile = document.getElementById("btnOpenMobile");
+  if (btnMobile) btnMobile.href = mobileUrl;
 
-  document.getElementById("tvUrlInput").value = tvUrl;
-  document.getElementById("btnOpenTv").href = tvUrl;
+  const tvInput = document.getElementById("tvUrlInput");
+  if (tvInput) tvInput.value = tvUrl;
+  const btnTv = document.getElementById("btnOpenTv");
+  if (btnTv) btnTv.href = tvUrl;
 
-  const randomId = "ABC #" + Math.floor(1000 + Math.random() * 9000);
-  document.getElementById("lunaCurrentId").innerText = randomId;
+  const lunaCurrentId = document.getElementById("lunaCurrentId");
+  if (lunaCurrentId) {
+    const randomId = "ABC #" + Math.floor(1000 + Math.random() * 9000);
+    lunaCurrentId.innerText = randomId;
+  }
 
-  // Hiển thị thông tin tài khoản nếu có
-  if (data.accountDetails) {
-    document.getElementById("credEmail").value = data.accountDetails.email || "—";
-    document.getElementById("credPassword").value = data.accountDetails.password || "—";
-    document.getElementById("credProfile").value = data.accountDetails.profile || "Hồ sơ cá nhân";
-    document.getElementById("credPin").value = data.accountDetails.pin || "Không có PIN";
-    // Tự động mở tab Tài Khoản nếu là tài khoản Email/Pass
-    if (data.accountDetails.email) {
-      switchLoginMode("account");
+  const lunaPlan = document.getElementById("lunaPlan");
+  if (lunaPlan) lunaPlan.innerText = data.plan || "Cao cấp";
+
+  const lunaCountry = document.getElementById("lunaCountry");
+  if (lunaCountry) lunaCountry.innerText = data.country || "KW";
+
+  const lunaStreams = document.getElementById("lunaStreams");
+  if (lunaStreams) lunaStreams.innerText = data.streams || "4";
+
+  const credEmail = document.getElementById("credEmail");
+  if (credEmail) {
+    if (data.accountDetails) {
+      credEmail.value = data.accountDetails.email || "—";
+      const credPass = document.getElementById("credPassword");
+      if (credPass) credPass.value = data.accountDetails.password || "—";
+      const credProf = document.getElementById("credProfile");
+      if (credProf) credProf.value = data.accountDetails.profile || "Hồ sơ cá nhân";
+      const credPin = document.getElementById("credPin");
+      if (credPin) credPin.value = data.accountDetails.pin || "Không có PIN";
+      if (data.accountDetails.email) switchLoginMode("account");
+    } else {
+      credEmail.value = "Chưa cấu hình tài khoản dự phòng";
+      const credPass = document.getElementById("credPassword");
+      if (credPass) credPass.value = "••••••••";
+      const credProf = document.getElementById("credProfile");
+      if (credProf) credProf.value = "Hồ sơ chính";
+      const credPin = document.getElementById("credPin");
+      if (credPin) credPin.value = "—";
+      switchLoginMode("link");
     }
-  } else {
-    document.getElementById("credEmail").value = "Chưa cấu hình tài khoản dự phòng";
-    document.getElementById("credPassword").value = "••••••••";
-    document.getElementById("credProfile").value = "Hồ sơ chính";
-    document.getElementById("credPin").value = "—";
-    switchLoginMode("link");
   }
 }
+
 
 function switchLoginMode(mode) {
   const btnLink = document.getElementById("btnModeLink");
