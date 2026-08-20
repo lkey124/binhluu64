@@ -172,10 +172,14 @@ router.post('/verify', keyVerificationLimiter, async (req, res) => {
 // 2. CÁC API ADMIN QUẢN TRỊ (BẢO VỆ BẰNG JWT)
 // -------------------------------------------------------------
 // Lấy danh sách Key & Thống kê
-router.get('/admin/overview', authenticateAdmin, (req, res) => {
+router.get('/admin/overview', authenticateAdmin, async (req, res) => {
+  // Luôn đồng bộ dữ liệu mới nhất từ Cloud Database (Upstash Redis) nếu có
+  await db.syncFromCloud();
+
   const keys = db.getAllKeysForAdmin();
   const sourceConfig = db.getSourceConfig();
   const logs = db.getLogs();
+
 
   const totalKeys = keys.length;
   const activeKeys = keys.filter(k => k.status === 'active' && !k.isExpired).length;
