@@ -1,5 +1,6 @@
 const express = require('express');
 const helmet = require('helmet');
+const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 require('dotenv').config();
@@ -11,8 +12,9 @@ const { scannerTrapMiddleware } = require('./config/security');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 1. Tắt Header nhận diện Server Express (Chống Fingerprinting)
+// 1. Tắt Header nhận diện Server Express & Bật Gzip/Brotli nén siêu tốc
 app.disable('x-powered-by');
+app.use(compression({ level: 6, threshold: 512 }));
 
 // 2. Bảo mật HTTP Headers
 app.use(helmet({
@@ -26,12 +28,16 @@ app.use(helmet({
 // 3. Honeypot & Scanner Trap Middleware (Chặn bot quét cổng)
 app.use(scannerTrapMiddleware);
 
-app.use(express.json({ limit: '50kb' })); // Giới hạn kích thước payload
+app.use(express.json({ limit: '50kb' }));
 app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 app.use(cookieParser());
 
-// 4. Phục vụ giao diện Frontend
-app.use(express.static(path.join(__dirname, '../public')));
+// 4. Phục vụ giao diện Frontend với bộ nhớ đệm HTTP ETag
+app.use(express.static(path.join(__dirname, '../public'), {
+  maxAge: '1h',
+  etag: true
+}));
+
 
 // 5. Route riêng truy cập trang Admin
 app.get('/admin', (req, res) => {

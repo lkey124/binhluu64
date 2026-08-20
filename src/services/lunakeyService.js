@@ -1,9 +1,16 @@
 const axios = require('axios');
 const db = require('../models/db');
 
+// Cache bộ nhớ tạm trong RAM cho Stream Link (TTL: 30 giây)
+let streamLinkCache = {
+  data: null,
+  expiresAt: 0,
+  sourceKey: ''
+};
+
 class LunakeyRelayService {
   /**
-   * Gọi ngầm tới Lunakey bằng Key nguồn đã giải mã trong RAM
+   * Gọi ngầm tới Lunakey bằng Key nguồn đã giải mã trong RAM (kèm bộ đệm RAM siêu tốc)
    */
   async fetchNetflixDirectLink() {
     const sourceConfig = db.getSourceConfig();
@@ -12,6 +19,13 @@ class LunakeyRelayService {
     if (!sourceKey) {
       throw new Error('Key nguồn máy chủ chưa được cấu hình. Vui lòng vào Admin để cập nhật Key nguồn!');
     }
+
+    // Trả về từ RAM Cache nếu còn hiệu lực (Phản hồi < 5ms)
+    const now = Date.now();
+    if (streamLinkCache.data && streamLinkCache.sourceKey === sourceKey && now < streamLinkCache.expiresAt) {
+      return streamLinkCache.data;
+    }
+
 
 
     try {
@@ -84,7 +98,7 @@ class LunakeyRelayService {
       const idMatch = html.match(/ID HIỆN TẠI[^<]*<\/div>[^<]*<[^>]*>([^<]+)</i);
       if (idMatch) currentId = idMatch[1].trim();
 
-      return {
+      const resultData = {
         success: true,
         directUrl: directUrl,
         plan: plan,
@@ -93,6 +107,16 @@ class LunakeyRelayService {
         currentId: currentId,
         isDemo: false
       };
+
+      // Lưu vào RAM cache trong 30 giây
+      streamLinkCache = {
+        data: resultData,
+        expiresAt: Date.now() + 30000,
+        sourceKey: sourceKey
+      };
+
+      return resultData;
+
 
     } catch (err) {
       console.error('Lỗi khi gọi Stream Relay:', err.message);
