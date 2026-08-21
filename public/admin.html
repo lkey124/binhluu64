@@ -180,11 +180,11 @@
 
       <!-- Pane 2: Create Key -->
       <div id="tab-create" class="tab-pane">
-        <form id="createKeyForm" onsubmit="handleCreateKeys(event)" class="admin-form">
+        <form id="createKeyForm" novalidate onsubmit="event.preventDefault(); handleCreateKeys(event);" class="admin-form">
           <div class="form-grid">
             <div class="form-group">
               <label>Số lượng Key muốn tạo:</label>
-              <input type="number" id="createCount" value="1" min="1" max="50" required>
+              <input type="number" id="createCount" value="1" min="1" max="50">
             </div>
             <div class="form-group">
               <label>Thời hạn sử dụng:</label>
@@ -201,7 +201,7 @@
             </div>
             <div class="form-group hidden" id="customDurationBox">
               <label>Nhập số ngày tùy chỉnh:</label>
-              <input type="number" id="createCustomDays" placeholder="VD: 15, 45, 60..." min="0.1" step="0.5" value="15">
+              <input type="number" id="createCustomDays" placeholder="VD: 15, 45, 60..." min="1" step="any" value="15">
             </div>
             <div class="form-group">
               <label>Tiền tố Key (Prefix):</label>
@@ -231,12 +231,13 @@
             <label>Ghi chú (Tên khách hàng / Đơn hàng):</label>
             <input type="text" id="createNote" placeholder="VD: Bán cho khách Nguyen Van A qua Zalo">
           </div>
-          <button type="submit" id="btnSubmitCreateKey" class="btn-primary-admin" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; width: 100%;">
+          <button type="button" onclick="handleCreateKeys(event)" id="btnSubmitCreateKey" class="btn-primary-admin" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; width: 100%; cursor: pointer;">
             <i class="fa-solid fa-wand-magic-sparkles"></i> LƯU & TẠO KEY NGAY
           </button>
         </form>
 
         <div id="createKeyStatusAlert" class="alert-box hidden" style="margin-top: 16px; padding: 14px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;"></div>
+
 
 
 
