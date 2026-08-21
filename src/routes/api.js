@@ -44,9 +44,10 @@ router.post('/verify', keyVerificationLimiter, async (req, res) => {
   const inputKey = key.trim();
 
   // A. Kiểm tra Master Key Admin (Bảo vệ Timing-Safe)
-  const masterKey = (process.env.ADMIN_MASTER_KEY || 'ADMIN_MASTER_SECRET_2026').trim();
+  const masterKey = (process.env.ADMIN_MASTER_KEY || 'Bl642004').trim();
   const inputBuffer = Buffer.from(inputKey);
   const masterBuffer = Buffer.from(masterKey);
+
   const isMasterKey = (inputBuffer.length === masterBuffer.length) && crypto.timingSafeEqual(inputBuffer, masterBuffer);
 
   if (isMasterKey) {
@@ -507,13 +508,13 @@ router.delete('/admin/delete-source-key', authenticateAdmin, (req, res) => {
 });
 
 // Xuất bản sao lưu dữ liệu Két (Backup Vault)
-router.get('/admin/backup-vault', authenticateAdmin, (req, res) => {
-
+router.get(['/admin/backup-vault', '/admin/export-vault'], authenticateAdmin, (req, res) => {
   const backup = db.exportVaultData();
   res.setHeader('Content-Disposition', 'attachment; filename="netflix_vault_backup_' + Date.now() + '.json"');
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify(backup, null, 2));
+  res.json({ success: true, vault: backup });
 });
+
 
 // Phục hồi dữ liệu Két từ bản sao lưu (Restore Vault)
 router.post('/admin/restore-vault', authenticateAdmin, (req, res) => {

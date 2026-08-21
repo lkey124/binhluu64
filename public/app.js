@@ -799,12 +799,15 @@ async function deleteSourceKey(keyId) {
 }
 
 async function downloadVaultBackup() {
+  const token = getAdminToken();
+  if (!token) return alert("Vui lòng đăng nhập lại!");
   try {
     const res = await fetch("/api/admin/backup-vault", {
-      headers: { "Authorization": "Bearer " + currentAdminToken }
+      headers: { "Authorization": "Bearer " + token }
     });
     if (!res.ok) throw new Error("Lỗi tải bản sao lưu");
-    const blob = await res.blob();
+    const data = await res.json();
+    const blob = new Blob([JSON.stringify(data.vault || data, null, 2)], { type: "application/json" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -819,6 +822,8 @@ async function downloadVaultBackup() {
 }
 
 async function handleRestoreVaultFile(event) {
+  const token = getAdminToken();
+  if (!token) return alert("Vui lòng đăng nhập lại!");
   const file = event.target.files[0];
   if (!file) return;
 
@@ -836,7 +841,7 @@ async function handleRestoreVaultFile(event) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer " + currentAdminToken
+            "Authorization": "Bearer " + token
           },
           body: JSON.stringify({ vaultData })
         });
@@ -858,12 +863,14 @@ async function handleRestoreVaultFile(event) {
 
 async function handlePurgeExpiredKeys() {
   if (!confirm("Bạn có chắc chắn muốn dọn dẹp và xóa sạch toàn bộ các Key đã hết hạn khỏi hệ thống?")) return;
+  const token = getAdminToken();
+  if (!token) return alert("Vui lòng đăng nhập lại!");
   try {
     const res = await fetch("/api/admin/purge-expired", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + currentAdminToken
+        "Authorization": "Bearer " + token
       }
     });
     const data = await res.json();
@@ -874,4 +881,5 @@ async function handlePurgeExpiredKeys() {
     alert("Lỗi dọn dẹp: " + err.message);
   }
 }
+
 
