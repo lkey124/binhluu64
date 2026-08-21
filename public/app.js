@@ -2,6 +2,14 @@ let currentAdminToken = null;
 let cachedAdminKeys = [];
 let currentFilter = "all";
 
+function getAdminToken() {
+  if (!currentAdminToken) {
+    currentAdminToken = localStorage.getItem('netflix_admin_token');
+  }
+  return currentAdminToken;
+}
+
+
 async function pasteFromClipboard() {
   try {
     const text = await navigator.clipboard.readText();
@@ -230,7 +238,7 @@ function switchAdminTab(tabName) {
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
   document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
 
-  if (event && event.currentTarget) {
+  if (typeof event !== "undefined" && event && event.currentTarget) {
     event.currentTarget.classList.add("active");
   }
   const targetPane = document.getElementById("tab-" + tabName);
@@ -241,12 +249,15 @@ function switchAdminTab(tabName) {
   }
 }
 
+
 async function loadAdminOverview() {
-  if (!currentAdminToken) return;
+
+  const token = getAdminToken();
+  if (!token) return;
 
   try {
     const res = await fetch("/api/admin/overview", {
-      headers: { "Authorization": "Bearer " + currentAdminToken }
+      headers: { "Authorization": "Bearer " + token }
     });
     const data = await res.json();
     if (!data.success) {
@@ -260,7 +271,6 @@ async function loadAdminOverview() {
       }
       throw new Error(data.error);
     }
-
 
     const setElemText = (id, val) => {
       const el = document.getElementById(id);
@@ -288,7 +298,6 @@ async function loadAdminOverview() {
     setElemText("sourceModalLastUpdated", "Cập nhật lúc: " + updateTimeText);
     setElemText("sourceStatusText", "API: " + data.sourceConfig.apiUrl + " • Key: " + maskedKeyText);
 
-
     cachedAdminKeys = data.keys || [];
     renderKeyTable(cachedAdminKeys);
     renderSavedAccounts(data.savedAccounts || []);
@@ -300,17 +309,15 @@ async function loadAdminOverview() {
   }
 }
 
-
-
 function renderKeyTable(keys) {
   const tbody = document.getElementById("keyTableBody");
+  if (!tbody) return;
   tbody.innerHTML = "";
 
   if (keys.length === 0) {
     tbody.innerHTML = "<tr><td colspan='7' style='text-align: center; color: var(--text-muted); padding: 24px;'>Chưa có mã Key nào trong hệ thống.</td></tr>";
     return;
   }
-
 
   keys.forEach(k => {
     let statusBadge = "";
@@ -344,11 +351,11 @@ function renderKeyTable(keys) {
       "</td>";
     tbody.appendChild(tr);
   });
-
 }
 
 function filterKeyTable() {
-  const search = document.getElementById("tableSearch").value.toLowerCase();
+  const searchElem = document.getElementById("tableSearch");
+  const search = searchElem ? searchElem.value.toLowerCase() : "";
   const filtered = cachedAdminKeys.filter(k => {
     const matchSearch = k.displayPrefix.toLowerCase().includes(search) || (k.note && k.note.toLowerCase().includes(search));
     let matchFilter = true;
@@ -366,23 +373,40 @@ function filterKeyTable() {
 function setTableFilter(filterType, btn) {
   currentFilter = filterType;
   document.querySelectorAll(".btn-filter").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
+  if (btn) btn.classList.add("active");
   filterKeyTable();
 }
 
 async function handleCreateKeys(event) {
-  event.preventDefault();
-  const count = document.getElementById("createCount").value;
-  let durationDays = document.getElementById("createDuration").value;
+  if (event && event.preventDefault) event.preventDefault();
+
+  const token = getAdminToken();
+  if (!token) {
+    alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
+    window.location.reload();
+    return;
+  }
+
+  const countElem = document.getElementById("createCount");
+  const count = countElem ? parseInt(countElem.value) || 1 : 1;
+
+  const durationElem = document.getElementById("createDuration");
+  let durationDays = durationElem ? durationElem.value : 30;
   if (durationDays === "custom") {
     const customDaysInput = document.getElementById("createCustomDays");
     durationDays = customDaysInput && customDaysInput.value ? parseFloat(customDaysInput.value) : 30;
+  } else {
+    durationDays = parseFloat(durationDays) || 30;
   }
-  const customKeyPrefix = document.getElementById("createPrefix").value;
-  const activateOnFirstUse = document.getElementById("createActivationType").value === "true";
-  const noteElem = document.getElementById("createNote");
-  const note = noteElem ? noteElem.value : "";
 
+  const prefixElem = document.getElementById("createPrefix");
+  const customKeyPrefix = prefixElem ? prefixElem.value.trim() : "NFLX-VIP";
+
+  const actElem = document.getElementById("createActivationType");
+  const activateOnFirstUse = actElem ? (actElem.value === "true") : true;
+
+  const noteElem = document.getElementById("createNote");
+  const note = noteElem ? noteElem.value.trim() : "";
 
   const customKeyInput = document.getElementById("createCustomKey") || document.getElementById("createModalCustomKey");
   const customAccountInput = document.getElementById("createCustomAccount") || document.getElementById("createModalCustomAccount");
@@ -390,48 +414,67 @@ async function handleCreateKeys(event) {
   const customRawKey = customKeyInput ? customKeyInput.value.trim() : "";
   const customAccount = customAccountInput ? customAccountInput.value.trim() : "";
 
+  const submitBtn = (event && event.target) ? event.target.querySelector("button[type='submit']") : document.querySelector("#createKeyForm button[type='submit']");
+  const originalBtnHtml = submitBtn ? submitBtn.innerHTML : "";
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Đang tạo Key...';
+  }
+
   try {
     const res = await fetch("/api/admin/create-keys", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + currentAdminToken
+        "Authorization": "Bearer " + token
       },
       body: JSON.stringify({ count, durationDays, customKeyPrefix, activateOnFirstUse, note, customRawKey, customAccount })
     });
 
     const data = await res.json();
-    if (!data.success) throw new Error(data.error);
+    if (!res.ok || !data.success) throw new Error(data.error || "Không thể tạo Key!");
 
-    const rawKeysText = data.createdKeys.map(k => k.rawKey).join('\n');
+    const rawKeysText = (data.createdKeys || []).map(k => k.rawKey).join('\n');
 
-    document.getElementById("createdKeysOutput").value = rawKeysText;
-    document.getElementById("createdResultBox").classList.remove("hidden");
+    const resultTextarea = document.getElementById("createdKeysOutput");
+    const resultBox = document.getElementById("createdResultBox");
+    if (resultTextarea) resultTextarea.value = rawKeysText;
+    if (resultBox) {
+      resultBox.classList.remove("hidden");
+      resultBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
 
     if (customKeyInput) customKeyInput.value = "";
     if (customAccountInput) customAccountInput.value = "";
 
     loadAdminOverview();
-    alert(data.message);
+    alert(data.message || "Tạo Key thành công!");
 
   } catch (err) {
     alert("Lỗi tạo Key: " + err.message);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnHtml;
+    }
   }
 }
 
-
 function copyCreatedKeys() {
   const textarea = document.getElementById("createdKeysOutput");
+  if (!textarea) return;
   textarea.select();
   navigator.clipboard.writeText(textarea.value);
   alert("Đã sao chép toàn bộ mã Key vào bộ nhớ tạm!");
 }
 
 async function toggleKey(keyId) {
+  const token = getAdminToken();
+  if (!token) return alert("Vui lòng đăng nhập lại!");
   try {
     const res = await fetch("/api/admin/toggle-key", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + currentAdminToken },
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ keyId })
     });
     const data = await res.json();
@@ -440,10 +483,12 @@ async function toggleKey(keyId) {
 }
 
 async function renewKey(keyId) {
+  const token = getAdminToken();
+  if (!token) return alert("Vui lòng đăng nhập lại!");
   try {
     const res = await fetch("/api/admin/renew-key", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + currentAdminToken },
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ keyId, extraDays: 30 })
     });
     const data = await res.json();
@@ -456,10 +501,12 @@ async function renewKey(keyId) {
 
 async function deleteKey(keyId) {
   if (!confirm("Bạn có chắc chắn muốn xóa Key này vĩnh viễn?")) return;
+  const token = getAdminToken();
+  if (!token) return alert("Vui lòng đăng nhập lại!");
   try {
     const res = await fetch("/api/admin/delete-key", {
       method: "DELETE",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + currentAdminToken },
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ keyId })
     });
     const data = await res.json();
@@ -469,6 +516,9 @@ async function deleteKey(keyId) {
 
 async function handleUpdateSource(event) {
   if (event && event.preventDefault) event.preventDefault();
+
+  const token = getAdminToken();
+  if (!token) return alert("Vui lòng đăng nhập lại!");
 
   const apiUrlInput = document.getElementById("sourceApiUrl") || document.getElementById("sourceModalApiUrl");
   const sourceKeyInput = document.getElementById("sourceKeyInput") || document.getElementById("sourceModalKeyInput");
@@ -484,7 +534,7 @@ async function handleUpdateSource(event) {
   try {
     const res = await fetch("/api/admin/update-source", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + currentAdminToken },
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ apiUrl, sourceKey })
     });
     const data = await res.json();
@@ -500,6 +550,9 @@ async function handleUpdateSource(event) {
 }
 
 async function testSourceConnection() {
+  const token = getAdminToken();
+  if (!token) return alert("Vui lòng đăng nhập lại!");
+
   const apiUrlInput = document.getElementById("sourceApiUrl") || document.getElementById("sourceModalApiUrl");
   const sourceKeyInput = document.getElementById("sourceKeyInput") || document.getElementById("sourceModalKeyInput");
 
@@ -513,34 +566,31 @@ async function testSourceConnection() {
     resBox.classList.remove("hidden");
   }
 
-
   try {
     const res = await fetch("/api/admin/test-source", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + currentAdminToken },
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ apiUrl, sourceKey })
     });
     const data = await res.json();
-
     if (resBox) {
       if (data.success) {
-        resBox.style.background = "rgba(34, 197, 94, 0.15)";
-        resBox.style.color = "#4ade80";
-        resBox.innerText = "✅ Kết nối thành công! Key nguồn hoạt động tốt.";
+        resBox.className = "test-result-box success";
+        resBox.innerText = "✅ " + data.message;
       } else {
-        resBox.style.background = "rgba(239, 68, 68, 0.15)";
-        resBox.style.color = "#f87171";
-        resBox.innerText = "❌ Kết nối thất bại: " + (data.error || "Key nguồn không hợp lệ hoặc bị chặn!");
+        resBox.className = "test-result-box error";
+        resBox.innerText = "❌ Lỗi: " + (data.error || "Không thể kết nối");
       }
     }
   } catch (err) {
     if (resBox) {
-      resBox.style.background = "rgba(239, 68, 68, 0.15)";
-      resBox.style.color = "#f87171";
-      resBox.innerText = "❌ Lỗi mạng: " + err.message;
+      resBox.className = "test-result-box error";
+      resBox.innerText = "❌ Lỗi kết nối: " + err.message;
     }
   }
 }
+
+
 
 
 function renderLogs(logs) {
