@@ -444,15 +444,34 @@ async function handleCreateKeys(event) {
       resultBox.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
+    const statusAlert = document.getElementById("createKeyStatusAlert");
+    if (statusAlert) {
+      statusAlert.className = "alert-box";
+      statusAlert.style.background = "rgba(34, 197, 94, 0.15)";
+      statusAlert.style.border = "1px solid rgba(34, 197, 94, 0.4)";
+      statusAlert.style.color = "#4ade80";
+      statusAlert.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + (data.message || "Tạo Key thành công!");
+      statusAlert.classList.remove("hidden");
+    }
+
     if (customKeyInput) customKeyInput.value = "";
     if (customAccountInput) customAccountInput.value = "";
 
     loadAdminOverview();
-    alert(data.message || "Tạo Key thành công!");
 
   } catch (err) {
+    const statusAlert = document.getElementById("createKeyStatusAlert");
+    if (statusAlert) {
+      statusAlert.className = "alert-box";
+      statusAlert.style.background = "rgba(239, 68, 68, 0.15)";
+      statusAlert.style.border = "1px solid rgba(239, 68, 68, 0.4)";
+      statusAlert.style.color = "#f87171";
+      statusAlert.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Lỗi tạo Key: ' + err.message;
+      statusAlert.classList.remove("hidden");
+    }
     alert("Lỗi tạo Key: " + err.message);
   } finally {
+
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalBtnHtml;

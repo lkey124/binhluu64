@@ -233,10 +233,13 @@
             <label>Ghi chú (Tên khách hàng / Đơn hàng):</label>
             <input type="text" id="createNote" placeholder="VD: Bán cho khách Nguyen Van A qua Zalo">
           </div>
-          <button type="submit" class="btn-primary-admin">
+          <button type="submit" id="btnSubmitCreateKey" class="btn-primary-admin" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; width: 100%;">
             <i class="fa-solid fa-wand-magic-sparkles"></i> LƯU & TẠO KEY NGAY
           </button>
         </form>
+
+        <div id="createKeyStatusAlert" class="alert-box hidden" style="margin-top: 16px; padding: 14px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;"></div>
+
 
 
         <div id="createdResultBox" class="created-result-box hidden">
@@ -396,7 +399,8 @@
   </div>
 
 
-  <script src="app.js?v=3.7.0"></script>
+  <script src="app.js?v=4.0.0"></script>
+
 
 
 
