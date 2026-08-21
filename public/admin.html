@@ -106,7 +106,9 @@
         <button class="tab-btn" onclick="switchTab('manage')">
           <i class="fa-solid fa-list-check"></i> Danh sách Key
         </button>
-
+        <button class="tab-btn" onclick="switchTab('accounts')">
+          <i class="fa-solid fa-folder-closed"></i> Kho Tài Khoản / Link
+        </button>
         <button class="tab-btn" onclick="switchTab('source')">
           <i class="fa-solid fa-server"></i> Key Nguồn Stream
         </button>
@@ -114,6 +116,7 @@
           <i class="fa-solid fa-clock-rotate-left"></i> Nhật ký
         </button>
       </div>
+
 
 
 
@@ -288,6 +291,31 @@
         </div>
       </div>
 
+      <!-- Pane: Kho Tài Khoản / Link Đã Lưu -->
+      <div id="tab-accounts" class="tab-pane">
+        <div class="table-toolbar">
+          <h3 style="margin: 0; font-size: 15px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-folder-open" style="color: #38bdf8;"></i> KHO TÀI KHOẢN & LINK STREAM ĐÃ LƯU TRỮ TRONG KÉT
+          </h3>
+        </div>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Thời gian lưu</th>
+                <th>Thông tin Tài khoản / Email / Profile</th>
+                <th>Link kích hoạt</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="savedAccountsTableBody">
+              <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">Đang tải danh sách tài khoản...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
       <!-- Pane 4: Source Config -->
       <div id="tab-source" class="tab-pane">
         <div class="source-config-card">
@@ -368,7 +396,8 @@
   </div>
 
 
-  <script src="app.js?v=3.6.0"></script>
+  <script src="app.js?v=3.7.0"></script>
+
 
 
   <script>
