@@ -26,18 +26,29 @@ const defaultData = {
 };
 
 
+const UPSTASH_DEFAULT_URL = 'https://massive-snake-172577.upstash.io';
+const UPSTASH_DEFAULT_TOKEN = 'gQAAAAAAAqIhAAIgcDIxMzBiYzUyYzQ4MWI0NDExYjMwMTAyNjUwNGY1NWY2Yw';
+
+function getCloudConfig() {
+  const cloudUrl = (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || UPSTASH_DEFAULT_URL).trim();
+  const cloudToken = (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || UPSTASH_DEFAULT_TOKEN).trim();
+  return { cloudUrl, cloudToken };
+}
+
 class DatabaseManager {
   constructor() {
     this.data = this.loadData();
-    // Tự động kéo dữ liệu từ Cloud Database khi khởi động nếu có cấu hình
+    // Tự động kéo dữ liệu từ Cloud Database ngay khi khởi động
     this.syncFromCloud().then(() => {
       this.purgeExpiredKeys();
     });
 
-    // Tự động quét và dọn dẹp sạch sẽ Key hết hạn mỗi 30 phút
+    // Tự động đồng bộ 2 chiều với Cloud Database mỗi 5 phút
     setInterval(() => {
-      this.purgeExpiredKeys();
-    }, 30 * 60 * 1000);
+      this.syncFromCloud().then(() => {
+        this.purgeExpiredKeys();
+      });
+    }, 5 * 60 * 1000);
   }
 
 
@@ -62,7 +73,7 @@ class DatabaseManager {
         fs.mkdirSync(dir, { recursive: true });
       }
       fs.writeFileSync(DB_FILE_PATH, JSON.stringify(dataToSave, null, 2), 'utf8');
-      // Đẩy sao lưu lên Cloud Database nếu có
+      // Đẩy sao lưu lên Cloud Database
       this.syncToCloud();
     } catch (err) {
       console.error('Lỗi khi ghi Database:', err.message);
@@ -70,8 +81,7 @@ class DatabaseManager {
   }
 
   async syncFromCloud() {
-    const cloudUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-    const cloudToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+    const { cloudUrl, cloudToken } = getCloudConfig();
     if (!cloudUrl || !cloudToken) return null;
 
     try {
@@ -122,8 +132,7 @@ class DatabaseManager {
   }
 
   async syncToCloud(force = false) {
-    const cloudUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-    const cloudToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+    const { cloudUrl, cloudToken } = getCloudConfig();
     if (!cloudUrl || !cloudToken) return;
 
     // Chống ghi đè dữ liệu rỗng lên Cloud
@@ -144,6 +153,7 @@ class DatabaseManager {
       console.warn('Lỗi ghi dữ liệu lên Cloud Database:', err.message);
     }
   }
+
 
 
 
