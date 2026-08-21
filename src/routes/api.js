@@ -206,9 +206,21 @@ router.get('/admin/overview', authenticateAdmin, async (req, res) => {
       sourceKeyMasked: sourceConfig.sourceKey ? (sourceConfig.sourceKey.substring(0, 4) + '********') : 'Chưa thiết lập',
       updatedAt: sourceConfig.updatedAt
     },
+    storeClickStats: db.getStoreClickStats(),
     logs
   });
 });
+
+// Ghi nhận sự kiện click vào trang bán hàng binhluu.ai.studio
+router.post('/track-store-click', (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+  const userAgent = req.headers['user-agent'] || '';
+  const { location = 'home_banner' } = req.body || {};
+
+  const result = db.trackStoreClick(ip, userAgent, location);
+  res.json({ success: true, ...result });
+});
+
 
 
 

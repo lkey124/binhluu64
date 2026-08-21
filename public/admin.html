@@ -121,7 +121,7 @@
 
       <!-- Pane 1: Overview -->
       <div id="tab-overview" class="tab-pane active">
-        <div class="stats-grid">
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
           <div class="stat-card">
             <span class="stat-num" id="statTotal">0</span>
             <span class="stat-label">Tổng số Key đã tạo</span>
@@ -138,7 +138,50 @@
             <span class="stat-num" id="statRevoked">0</span>
             <span class="stat-label">Key đã bị khóa</span>
           </div>
+          <div class="stat-card" style="border-color: rgba(244, 63, 94, 0.4); background: linear-gradient(145deg, rgba(244, 63, 94, 0.12), rgba(0,0,0,0.4));">
+            <span class="stat-num" id="statStoreClicksToday" style="color: #fb7185;">0</span>
+            <span class="stat-label" style="color: #fda4af;"><i class="fa-solid fa-cart-shopping"></i> Click Shop Hôm Nay</span>
+          </div>
+          <div class="stat-card" style="border-color: rgba(168, 85, 247, 0.4); background: linear-gradient(145deg, rgba(168, 85, 247, 0.12), rgba(0,0,0,0.4));">
+            <span class="stat-num" id="statStoreClicksTotal" style="color: #c084fc;">0</span>
+            <span class="stat-label" style="color: #e9d5ff;"><i class="fa-solid fa-chart-line"></i> Tổng Click Shop</span>
+          </div>
         </div>
+
+        <!-- Bảng Thống Kê Lượt Click Vào Trang Bán Hàng Theo Từng Ngày -->
+        <div class="store-clicks-section" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 20px; margin-top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(244, 63, 94, 0.15); display: flex; align-items: center; justify-content: center; color: #fb7185; font-size: 16px;">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+              </div>
+              <div>
+                <h4 style="font-size: 14px; font-weight: 800; color: #f8fafc; margin: 0;">THỐNG KÊ LƯỢT CLICK TRANG BÁN HÀNG (binhluu.ai.studio)</h4>
+                <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 0 0;">Theo dõi số lượt khách bấm vào mua hàng theo từng ngày (Múi giờ Việt Nam GMT+7)</p>
+              </div>
+            </div>
+            <a href="https://binhluu.ai.studio/" target="_blank" rel="noopener noreferrer" style="font-size: 12px; color: #fb7185; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); padding: 6px 12px; border-radius: 6px;">
+              <i class="fa-solid fa-up-right-from-square"></i> Mở Trang Bán Hàng
+            </a>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width: 25%;">Ngày</th>
+                  <th style="width: 20%;">Số lượt Click</th>
+                  <th style="width: 40%;">Mức độ truy cập</th>
+                  <th style="width: 15%;">Tỷ lệ %</th>
+                </tr>
+              </thead>
+              <tbody id="storeClicksTableBody">
+                <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Đang tải dữ liệu thống kê click...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
 
         <div class="source-status-card">
           <div class="source-info-left">
@@ -374,7 +417,8 @@
   </div>
 
 
-  <script src="app.js?v=4.0.0"></script>
+  <script src="app.js?v=4.1.0"></script>
+
 
 
 

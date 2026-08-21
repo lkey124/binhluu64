@@ -298,6 +298,11 @@ async function loadAdminOverview() {
     setElemText("sourceModalLastUpdated", "Cập nhật lúc: " + updateTimeText);
     setElemText("sourceStatusText", "API: " + data.sourceConfig.apiUrl + " • Key: " + maskedKeyText);
 
+    const storeStats = data.storeClickStats || { totalClicks: 0, todayClicks: 0, dailyStats: [] };
+    setElemText("statStoreClicksToday", storeStats.todayClicks);
+    setElemText("statStoreClicksTotal", storeStats.totalClicks);
+    renderStoreClicksTable(storeStats);
+
     cachedAdminKeys = data.keys || [];
     renderKeyTable(cachedAdminKeys);
     renderSavedAccounts(data.savedAccounts || []);
@@ -308,6 +313,48 @@ async function loadAdminOverview() {
     console.error("Lỗi tải Admin Overview:", err);
   }
 }
+
+function renderStoreClicksTable(stats) {
+  const tbody = document.getElementById("storeClicksTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  const dailyList = stats && stats.dailyStats ? stats.dailyStats : [];
+  if (dailyList.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='4' style='text-align: center; color: var(--text-muted); padding: 20px;'>Chưa có lượt click nào được ghi nhận. Khi có khách bấm vào mua hàng tại trang chủ, hệ thống sẽ tự động cập nhật thống kê tại đây!</td></tr>";
+    return;
+  }
+
+  const maxClicks = Math.max(...dailyList.map(d => d.count), 1);
+  const totalAll = stats.totalClicks || 1;
+
+  dailyList.forEach(d => {
+    const isToday = d.date === stats.todayStr;
+    const dateFormatted = d.date.split('-').reverse().join('/');
+    const percent = Math.round((d.count / totalAll) * 100);
+    const barWidth = Math.max(Math.round((d.count / maxClicks) * 100), 5);
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td><strong style='color: " + (isToday ? "#4ade80" : "#f8fafc") + "; font-size: 13px;'>" +
+      (isToday ? "<i class='fa-solid fa-star' style='color: #facc15; margin-right: 4px;'></i> " : "") + dateFormatted + "</strong>" +
+      (isToday ? " <span style='font-size: 10px; background: rgba(34, 197, 94, 0.2); color: #4ade80; padding: 2px 6px; border-radius: 4px; font-weight: 700;'>Hôm nay</span>" : "") + "</td>" +
+      "<td><strong style='font-size: 14px; color: #fb7185; font-family: monospace;'>" + d.count + "</strong> <span style='font-size: 11px; color: var(--text-muted);'>lượt</span></td>" +
+      "<td><div style='background: rgba(255, 255, 255, 0.08); border-radius: 6px; height: 8px; width: 100%; overflow: hidden; max-width: 250px;'><div style='background: linear-gradient(90deg, #f43f5e, #fb7185); height: 100%; width: " + barWidth + "%; border-radius: 6px;'></div></div></td>" +
+      "<td><span style='font-size: 12px; font-weight: 700; color: #cbd5e1;'>" + percent + "%</span></td>";
+    tbody.appendChild(tr);
+  });
+}
+
+function trackShopClick(location) {
+  try {
+    fetch('/api/track-store-click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ location: location || 'home_banner' })
+    }).catch(() => {});
+  } catch (e) {}
+}
+
 
 function renderKeyTable(keys) {
   const tbody = document.getElementById("keyTableBody");

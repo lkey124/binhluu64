@@ -22,8 +22,11 @@ const defaultData = {
     }
   },
   clientKeys: [],
-  accessLogs: []
+  accessLogs: [],
+  storeClicksByDate: {},
+  storeClicksLogs: []
 };
+
 
 
 const UPSTASH_DEFAULT_URL = 'https://massive-snake-172577.upstash.io';
@@ -110,12 +113,23 @@ class DatabaseManager {
             if (!accMap.has(a.id)) accMap.set(a.id, a);
           });
 
+          // Hợp nhất Thống kê Click Bán Hàng theo ngày
+          const localClicksByDate = this.data.storeClicksByDate || {};
+          const cloudClicksByDate = parsed.storeClicksByDate || {};
+          const mergedClicksByDate = { ...cloudClicksByDate };
+          for (const [d, count] of Object.entries(localClicksByDate)) {
+            mergedClicksByDate[d] = Math.max(mergedClicksByDate[d] || 0, count);
+          }
+
           this.data = {
             ...defaultData,
             ...parsed,
             clientKeys: Array.from(keyMap.values()),
-            savedAccounts: Array.from(accMap.values())
+            savedAccounts: Array.from(accMap.values()),
+            storeClicksByDate: mergedClicksByDate,
+            storeClicksLogs: (parsed.storeClicksLogs || this.data.storeClicksLogs || []).slice(0, 300)
           };
+
 
           this.hasSyncedFromCloud = true;
           const dir = path.dirname(DB_FILE_PATH);
@@ -528,6 +542,79 @@ class DatabaseManager {
   getLogs() {
     return this.data.accessLogs.slice(0, 50);
   }
+
+  // --- THEO DÕI LƯỢT CLICK VÀO TRANG BÁN HÀNG THEO TỪNG NGÀY ---
+  trackStoreClick(ip = '127.0.0.1', userAgent = '', sourceLocation = 'home_banner') {
+    this.loadData();
+    if (!this.data.storeClicksByDate) this.data.storeClicksByDate = {};
+    if (!this.data.storeClicksLogs) this.data.storeClicksLogs = [];
+
+    // Lấy ngày theo múi giờ Việt Nam (UTC+7)
+    const now = new Date();
+    const vnDateStr = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(now); // "YYYY-MM-DD"
+
+    this.data.storeClicksByDate[vnDateStr] = (this.data.storeClicksByDate[vnDateStr] || 0) + 1;
+
+    this.data.storeClicksLogs.unshift({
+      timestamp: now.toISOString(),
+      date: vnDateStr,
+      ip: ip,
+      userAgent: userAgent ? userAgent.substring(0, 150) : '',
+      location: sourceLocation
+    });
+
+    if (this.data.storeClicksLogs.length > 300) {
+      this.data.storeClicksLogs.pop();
+    }
+
+    this.saveData();
+    return { date: vnDateStr, totalToday: this.data.storeClicksByDate[vnDateStr] };
+  }
+
+  getStoreClickStats() {
+    this.loadData();
+    const clicksByDate = this.data.storeClicksByDate || {};
+    const logs = this.data.storeClicksLogs || [];
+
+    const now = new Date();
+    const todayStr = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(now);
+
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const yesterdayStr = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(yesterday);
+
+    let totalClicks = 0;
+    const sortedDaily = Object.entries(clicksByDate)
+      .map(([date, count]) => {
+        totalClicks += count;
+        return { date, count };
+      })
+      .sort((a, b) => b.date.localeCompare(a.date));
+
+    return {
+      totalClicks,
+      todayClicks: clicksByDate[todayStr] || 0,
+      yesterdayClicks: clicksByDate[yesterdayStr] || 0,
+      todayStr,
+      dailyStats: sortedDaily,
+      recentLogs: logs.slice(0, 30)
+    };
+  }
+
 
   exportVaultData() {
     this.loadData();
